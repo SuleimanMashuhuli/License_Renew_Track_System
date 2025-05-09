@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -116,10 +115,10 @@ export default function Subscriptions() {
           <TableBody>
             {subscriptions.map((sub, index) => (
               <TableRow key={index}>
-                <TableCell>{sub.name}</TableCell>
-                <TableCell>{sub.type}</TableCell>
-                <TableCell>{sub.authority}</TableCell>
-                <TableCell>{new Date(sub.expiry).toLocaleDateString()}</TableCell>
+                <TableCell>{sub.sub_name}</TableCell>
+                <TableCell>{sub.sub_type}</TableCell>
+                <TableCell>{sub.issuing_authority}</TableCell>
+                <TableCell>{new Date(sub.expiring_date).toLocaleDateString()}</TableCell>
                 <TableCell>${sub.amount}</TableCell>
                 <TableCell>{sub.reference}</TableCell>
                 <TableCell>
@@ -138,7 +137,7 @@ export default function Subscriptions() {
             ))}
           </TableBody>
         </Table>
-      </div>
+      </div>  
 
 
       <style>{`

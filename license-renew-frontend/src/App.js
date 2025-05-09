@@ -27,6 +27,8 @@ import DashboardHome from "./pages/DashboardHome.jsx";
 import Subscriptions from "./pages/Subscriptions.jsx";
 import Employee from "./pages/Employees.jsx";
 import Renewing from "./pages/Renewing.jsx";
+import Admins from "./pages/Admins.jsx"
+import Logs from "./pages/Logs.jsx"
 import Settings from "./pages/Settings.jsx";
 
 
@@ -71,8 +73,10 @@ function App() {
                     <Route path="dashboard" element={<DashboardHome />} />
                     <Route path="subscription" element={<Subscriptions />} />
                     <Route path="employees" element={<Employee />} />
-                    <Route path="settings" element={<Settings />} />
                     <Route path="renewing" element={<Renewing />} />
+                    <Route path="admins/manage" element={<Admins />} />
+                    <Route path="admins/logs" element={<Logs />} />
+                    <Route path="settings" element={<Renewing />} />
                 </Route>
             </Route>
         </Routes>

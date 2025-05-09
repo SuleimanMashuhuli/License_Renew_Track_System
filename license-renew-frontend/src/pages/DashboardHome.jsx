@@ -196,7 +196,7 @@ export default function DashboardHome() {
         }
 
         caption {
-          margin-top: 1rem;
+          margin-top: 2rem;
           font-size: 14px;
           color: #777;
           text-align: center;

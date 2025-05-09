@@ -339,11 +339,13 @@ class User(AbstractUser):
 
 class Subscriptions(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    sub_name = models.CharField(max_length=100)
     sub_type = models.CharField(max_length=100)
     issuing_authority = models.CharField(max_length=100)
     issuing_date = models.DateField()
     expiring_date = models.DateField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reference = models.CharField(max_length=15)
     owner_first_name = models.CharField(max_length=100)
     owner_last_name = models.CharField(max_length=100)
     owner_email = models.EmailField(unique=True)

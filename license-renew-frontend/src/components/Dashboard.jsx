@@ -128,7 +128,7 @@ const Dashboard = () => {
                         <button class="action-Btn"><Link to="/vprofile">View Profile</Link></button>
                         <button class="action-Btn"><Link to="/sign_in">Sign Out</Link></button>
                     </div>
-                </div>
+                </div> 
             </headeR>
             <div className='page1-main'>
                 <div className='pg1-container'>

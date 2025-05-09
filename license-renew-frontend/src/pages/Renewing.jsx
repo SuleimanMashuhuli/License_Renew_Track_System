@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableCaption,
+  TableRow,
+} from '../components/Table.jsx';
 import axios from 'axios';
+
 
 export default function RenewalsPage() {
   const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
@@ -25,38 +35,43 @@ export default function RenewalsPage() {
 
   return (
     <div className="renewals-page">
-      <h2>Expired Subscriptions</h2>
-      <table className="renewals-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Provider</th>
-            <th>Department</th>
-            <th>Expired On</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {expiredSubscriptions.map(sub => (
-            <tr key={sub.id}>
-              <td>{sub.name}</td>
-              <td>{sub.provider}</td>
-              <td>{sub.department}</td>
-              <td>{sub.expiry_date}</td>
-              <td><button className="renew-btn" onClick={() => handleRenewClick(sub)}>Renew</button></td>
-            </tr>
+      
+      <Table className="renewals-table">
+        <TableCaption>Subscriptions expired and need attention!!!.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Provider</TableHead>
+            <TableHead>Department</TableHead>
+            <TableHead>Expired On</TableHead>
+            <TableHead>Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {expiredSubscriptions.map((sub) => (
+            <TableRow key={sub.id}>
+              <TableCell>{sub.sub_name}</TableCell>
+              <TableCell>{sub.issuing_authority}</TableCell>
+              <TableCell>{sub.owner_department}</TableCell>
+              <TableCell>{sub.expiring_date}</TableCell>
+              <TableCell>
+                <button className="renew-btn" onClick={() => handleRenewClick(sub)}>
+                  Renew
+                </button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {showModal && selectedSubscription && (
         <div className="modal-overlay">
           <div className="modal">
             <h3>Renew Subscription</h3>
-            <p><strong>Name:</strong> {selectedSubscription.name}</p>
-            <p><strong>Provider:</strong> {selectedSubscription.provider}</p>
-            <p><strong>Department:</strong> {selectedSubscription.department}</p>
-            <p><strong>Expired On:</strong> {selectedSubscription.expiry_date}</p>
+            <p><strong>Name:</strong> {selectedSubscription.sub_name}</p>
+            <p><strong>Provider:</strong> {selectedSubscription.issuing_authority}</p>
+            <p><strong>Department:</strong> {selectedSubscription.owner_department}</p>
+            <p><strong>Expired On:</strong> {selectedSubscription.expiring_date}</p>
             <div className="modal-actions">
               <button className="proceed-btn" onClick={handleProceed}>Proceed</button>
               <button className="decline-btn" onClick={() => setShowModal(false)}>Decline</button>
@@ -131,6 +146,52 @@ export default function RenewalsPage() {
           padding: 10px 16px;
           border: none;
           border-radius: 4px;
+        }
+          .table-container {
+          border: 1px solid #e0e0e0;
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          text-align: left;
+          caption-side: bottom;
+          
+        }
+
+        th,
+        td {
+          padding: 12px 15px;
+          border: 0px solid #e0e0e0;
+        }
+
+        th {
+          background-color: #f5f5f5;
+          font-weight: bold;
+          color: #333;
+          text-transform: uppercase;
+          font-size: 14px;
+        }
+
+        td {
+          font-size: 13px;
+          color: #555;
+        }
+
+        tbody tr:nth-child(even) {
+          background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+          background-color: #f1f1f1;
+        }
+          caption {
+          margin-top: 1rem;
+          font-size: 14px;
+          color: #777;
+          text-align: center;
         }
       `}</style>
     </div>
