@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../components/Table.jsx';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '../components/Table.jsx';
+
 
 export default function DashboardHome() {
   const [totalSubscriptions, setTotalSubscriptions] = useState(null);
@@ -18,25 +11,26 @@ export default function DashboardHome() {
   const [expiringSoon, setExpiringSoon] = useState([]);
 
 
-
   useEffect(() => {
     fetchDashboardStats();
   }, []);
-
+  
   const fetchDashboardStats = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
   
-      const [subsRes, activeRes, expiredRes] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/subscriptions/', { headers }),
-        axios.get('http://127.0.0.1:8000/api/subscriptions/?status=active', { headers }),
-        axios.get('http://127.0.0.1:8000/api/subscriptions/?status=expired', { headers }),
-      ]);
+      const subsRes = await axios.get('http://127.0.0.1:8000/api/subscriptions/', { headers });
   
       setTotalSubscriptions(subsRes.data.length);
-      setActiveLicenses(activeRes.data.length);
-      setExpiredLicenses(expiredRes.data.length);
+  
+      const activeSubscriptions = subsRes.data.filter(sub => sub.status === 'active');
+      const expiredSubscriptions = subsRes.data.filter(sub => sub.status === 'expired');
+
+      console.log(activeSubscriptions, expiredSubscriptions);
+  
+      setActiveLicenses(activeSubscriptions.length);
+      setExpiredLicenses(expiredSubscriptions.length);
   
       const today = new Date();
       const in30Days = new Date();
@@ -101,10 +95,10 @@ export default function DashboardHome() {
           <TableBody>
             {expiringSoon.map((sub, index) => (
               <TableRow key={index}>
-                <TableCell>{sub.name}</TableCell>
+                <TableCell>{sub.sub_name}</TableCell>
                 <TableCell>{sub.sub_type}</TableCell>
                 <TableCell>{sub.issuing_authority}</TableCell>
-                <TableCell>{new Date(sub.expiry_date).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(sub.expiring_date).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">{sub.status}</TableCell>
               </TableRow>
             ))}

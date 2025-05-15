@@ -652,44 +652,136 @@ def create_admin(request):
         email = request.POST.get('email')
         mobi_number = request.POST.get('mobiNumber')
         user_role = request.POST.get('userRole')
+        password = request.data.get('password')
 
-        user = User.objects.create(
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            mobiNumber=mobi_number,
-            userRole=user_role,
-        )
+        is_first_user = User.objects.count() == 0
 
-        serializer = UserSerializer(user)
-        return Response({"message": "User created successfully"})
+        user_role = UserRole.SUPERUSER if is_first_user else request.data.get('userRole', UserRole.ADMIN)
+
+        user = User(
+        username=username,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        mobiNumber=mobi_number,
+        userRole=user_role,
+        password_set=True  
+    )
+
+    user.set_password(password)  
+
+    
+    if is_first_user:
+        user.is_superuser = True
+        user.is_staff = True
+
+    user.save()
+
+    serializer = UserSerializer(user)
+    return Response({
+        "message": f"{'Superuser' if is_first_user else 'Admin'} created successfully.",
+        "user": serializer.data
+    })
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+@api_view(['GET'])
+def list_user(request):
+    admin = User.objects.all()
+    serializer = UserSerializer(admin, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def get_user(request, id):
+    try:
+        admin_obj = User.objects.get(id=id)
+        serializer = UserSerializer(admin_obj)
+        return Response(serializer.data)
+    except User.DoesNotExist:
+        return Response({"error": "This user is not found"}, status=404)
+
+@api_view(['DELETE'])
+def delete_user(request, id):
+    try:
+        admin_obj = User.objects.get(id=id)
+        admin_obj.delete()
+        return Response({"message": "user deleted successfully"}, status=204)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+
+class UserUpdateView(APIView):
+    def put(self, request, id):
+        try:
+            admin = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserSerializer(admin, data=request.data, partial=True)
+
+        if serializer.is_valid():
+          
+            serializer.save()
+       
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
 
 @api_view(['POST'])
 def create_subscription(request):
-    if request.method == 'POST':
-        subscription = Subscriptions(
-            sub_type=request.POST['sub_type'],
-            issuing_authority=request.POST['issuing_authority'],
-            issuing_date=request.POST['issuing_date'],
-            expiring_date=request.POST['expiring_date'],
-            amount=request.POST['amount'],
-            owner_first_name=request.POST['owner_first_name'],
-            owner_last_name=request.POST['owner_last_name'],
-            owner_email=request.POST['owner_email'],
-            owner_department=request.POST['owner_department'],
-            associated_documents=request.FILES['associated_documents'],
-        )
-        subscription.user = request.user 
-        subscription.save()
-        return redirect('subscriptions_list')
+    if request.method == 'POST': 
+        try:
+            user = request.user if request.user.is_authenticated else None
+
+            issuing_date_str = request.data.get('issuing_date')
+            expiring_date_str = request.data.get('expiring_date')
+
+                        
+            issuing_date = datetime.strptime(issuing_date_str, '%Y-%m-%d').date() if issuing_date_str else None
+            expiring_date = datetime.strptime(expiring_date_str, '%Y-%m-%d').date() if expiring_date_str else None
+
+            associated_documents = request.FILES.get('associated_documents', None)
+
+            subscription = Subscriptions(
+                user=user, 
+                sub_name=request.data.get('sub_name'),
+                sub_type=request.data.get('sub_type'),
+                issuing_authority=request.data.get('issuing_authority'),
+                issuing_date=issuing_date,
+                expiring_date=expiring_date,
+                amount=request.data.get('amount'),
+                reference=request.data.get('reference'),
+                owner_first_name=request.data.get('owner_first_name'),
+                owner_last_name=request.data.get('owner_last_name'),
+                owner_email=request.data.get('owner_email'),
+                owner_department=request.data.get('owner_department'),
+                associated_documents=associated_documents,
+            )
+            subscription.user = request.user if request.user.is_authenticated else None
+            subscription.save()
+        
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+            return redirect('subscriptions_list')
     return render(request, 'create_subscription.html')
 
 
 class SubscriptionsViewSet(viewsets.ModelViewSet):
     queryset = Subscriptions.objects.all().select_related('user') 
     serializer_class = SubscriptionsSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        status = self.request.query_params.get('status', None)
+        if status:
+            queryset = queryset.filter(status=status)
+        return queryset
 
 @api_view(['GET'])
 def list_subscriptions(request):
@@ -705,23 +797,24 @@ def get_subscriptions(request, id):
         serializer = SubscriptionsSerializer(license_obj)
         return Response(serializer.data)
     except Subscriptions.DoesNotExist:
-        return Response({"error": "Software subscription not found"}, status=404)
+        return Response({"error": "This subscription not found"}, status=404)
 
 @api_view(['DELETE'])
 def delete_subscriptions(request, id):
     try:
         license_obj = Subscriptions.objects.get(id=id)
-        license_obj.delete()
         return Response({"message": "subscription deleted successfully"}, status=204)
     except Subscriptions.DoesNotExist:
         return Response({"error": "subscription not found"}, status=404)
 
+
+        license_obj.delete()
 class SubscriptionsUpdateView(APIView):
     def put(self, request, id):
         try:
             license = Subscriptions.objects.get(id=id)
         except Subscriptions.DoesNotExist:
-            return Response({'error': 'License not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'SUbscriprion not found'}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = SubscriptionsSerializer(license, data=request.data, partial=True)
 
@@ -815,5 +908,259 @@ def get_unread_notifications(request):
 
 
 
+@api_view(['POST'])
+@parser_classes([MultiPartParser])
+def renew_subscriptions(request, id):
+    license = Subscriptions.objects.get(id=id)
 
-    
+    new_expiry = request.data.get('new_expiry_date')
+    sub_type = request.data.get('sub_type')
+    issuing_authority = request.data.get('issuing_authority')
+    notes = request.data.get('notes')
+    renewal_document = request.FILES.get('renewal_document')
+
+    try:
+        license.expiring_date = new_expiry
+        license.status = 'active'
+        license.sub_type = sub_type
+        license.issuing_authority = issuing_authority
+        license.notes = notes
+        if renewal_document:
+            license.renewal_document = renewal_document  
+        license.save()
+        return Response({"message": "Subscription renewed."})
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SignInView(APIView):
+    def post(self, request):
+        username_or_email = request.data.get('username')
+        password = request.data.get('password')
+
+        print(f"Attempting to authenticate user: {username_or_email}")
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        try:
+            if re.match(email_pattern, username_or_email):
+                user = get_user_model().objects.get(email=username_or_email)
+            else:
+                user = get_user_model().objects.get(username=username_or_email)
+
+            print(f"User found: {user}")
+
+            if not user.password_set:
+                return Response({
+                    'message': 'Password not set. Please create a password.',
+                    'user_id': user.id,
+                    'redirect': 'set-password' 
+                }, status=200)
+
+            if user.check_password(password):
+                print("Password is correct")
+
+                otp = random.randint(100000, 999999)
+                otp_session = str(uuid.uuid4())
+
+        
+                cache.set(otp_session, {
+                    "username": user.username,
+                    "email": user.email,
+                    "otp": otp
+                }, timeout=300)
+
+                send_mail(
+                    subject="Your OTP Code",
+                    message=f"Your OTP code is: {otp}",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+
+                return Response({
+                    'message': 'OTP sent to your email',
+
+                    'otp_session': otp_session
+                }, status=HTTP_200_OK)
+            else:
+                print("Password is incorrect")
+                raise AuthenticationFailed('Invalid credentials')
+
+        except get_user_model().DoesNotExist:
+            print(f"User with username {username_or_email} does not exist")
+            raise AuthenticationFailed('User does not exist')
+
+@api_view(['POST'])
+def set_user_password(request):
+    user_id = request.data.get('user_id')
+    new_password = request.data.get('new_password')
+
+    if not user_id or not new_password:
+        return Response({'error': 'user_id and new_password are required'}, status=400)
+
+
+    try:
+        user = get_user_model().objects.get(id=user_id)
+        if user.password:
+            return Response({'error': 'Password is already set'}, status=400)
+
+        user.set_password(new_password)
+        user.save() 
+        return Response({'message': 'Password set successfully'}, status=200)
+    except get_user_model().DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+
+
+class VerifyOTPView(APIView):
+    def post(self, request):
+        otp_session = request.data.get("otp_session")
+        input_otp = request.data.get("otp")
+
+        if not otp_session or not input_otp:
+            raise ValidationError("OTP session and OTP code are required.")
+
+        cached_data = cache.get(otp_session)
+
+        if not cached_data:
+            raise ValidationError("OTP session expired or invalid.")
+
+        try:
+            if str(cached_data["otp"]) != str(input_otp):
+                raise AuthenticationFailed("Invalid OTP")
+
+            username = cached_data["username"]
+            user = get_user_model().objects.get(username=username)
+
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+
+            cache.delete(otp_session)
+
+            return Response({
+                "message": "OTP verified successfully",
+                "access_token": access_token,
+                "refresh_token": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                }
+            }, status=HTTP_200_OK)
+
+        except get_user_model().DoesNotExist:
+            raise AuthenticationFailed("User not found")
+
+
+
+class ResendOTPView(APIView):
+    def post(self, request):
+        otp_session = request.data.get("otp_session")
+
+        if not otp_session:
+            raise ValidationError("OTP session is required.")
+
+        cached_data = cache.get(otp_session)
+
+        if not cached_data:
+            raise ValidationError("OTP session expired or invalid.")
+
+        new_otp = random.randint(100000, 999999)
+
+        cached_data["otp"] = new_otp
+        cache.set(otp_session, cached_data, timeout=300)
+
+        send_mail(
+            subject="Your New OTP Code",
+            message=f"Your new OTP code is: {new_otp}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[cached_data["email"]],
+            fail_silently=False,
+        )
+
+        return Response({
+            "message": "New OTP has been sent to your email"
+        }, status=HTTP_200_OK)
+
+
+
+
+class SignUpView(APIView):
+    def post(self, request):
+        try:
+
+            if User.objects.exists():
+                return JsonResponse({"error": "Registration is disabled. A user already exists."}, status=403)
+
+
+            data = json.loads(request.body.decode('utf-8'))
+            print("Received Data:", data) 
+           
+            required_fields = ["username", "password", "first_name", "middle_name", "last_name", "email"]
+            for field in required_fields:
+                if field not in data or not data[field]:
+                    return JsonResponse({"error": f"{field} is required"}, status=400)
+
+
+            user = Users(
+                username=data["username"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                mobiNumber=data.get("mobi_number"),
+                email=data["email"]
+            )
+            user.set_password(data["password"]) 
+            user.save()
+
+            print(f"User {user.username} saved successfully!")
+
+            return JsonResponse({"message": "User created successfully"}, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+       
+        except Exception as e:   
+
+            print(f"Error: {str(e)}")
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = PasswordResetTokenGenerator().make_token(user)
+            reset_link = f"http://127.0.0.1:3000/reset_password/{uid}/{token}/"
+
+            send_mail(
+                subject="Reset Your Password",
+                message=f"Click the link to reset your password: {reset_link}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+
+            return Response({"message": "Password reset link sent"}, status=status.HTTP_200_OK)
+        except Users.DoesNotExist:
+            return Response({"error": "Email not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ResetPasswordView(APIView):
+    def post(self, request, uidb64, token):
+        password = request.data.get("password")  
+        try:
+            
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = get_user_model().objects.get(id=uid)
+
+         
+            if PasswordResetTokenGenerator().check_token(user, token):
+                user.set_password(password)  
+                user.save()  
+                return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except (get_user_model().DoesNotExist, ValueError, TypeError):
+            return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+

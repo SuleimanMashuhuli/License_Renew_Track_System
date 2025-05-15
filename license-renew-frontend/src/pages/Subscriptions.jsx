@@ -1,73 +1,228 @@
-import { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../components/Table.jsx';
+import { useState, useEffect } from 'react';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '../components/Table.jsx';
+import axios from 'axios';
+
+
+const ActionMenu = ({ sub, index, openModal, handleDelete }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <span onClick={() => setIsOpen(!isOpen)} className="action-trigger">
+        &#x22EF;
+      </span>
+
+      {isOpen && (
+        <div className="mini-modal" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => {
+              openModal(sub, index);
+              setIsOpen(false);
+            }}
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => {
+              handleDelete(index);
+              setIsOpen(false);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+
+      <style>{`
+
+        .action-trigger {
+          display: inline-block;
+          font-size: 16px;
+          padding: 4px;
+          line-height: 1;
+          border-radius: 50%;
+          cursor: pointer;
+          transition: background 0.2s ease-in-out;
+          text-decoration: none !important; 
+          color: inherit;
+        }
+
+
+        .action-trigger:hover {
+          background-color: #eaeaea;
+        }
+
+        .mini-modal {
+          margin-left: 20px;
+          position: absolute;
+          bottom: 0; 
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          padding: 5px 8px;
+          border-radius: 6px;
+          width: 60px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .mini-modal button {
+          padding: 4px 6px;
+          font-size: 12px;
+          border: none;
+          background-color: #f0f0f0;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.3s;
+        }
+
+        .mini-modal button:hover {
+          background-color: #e0e0e0;
+        }
+
+        .mini-modal button:last-child {
+          color: red;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+
+
 
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setformData] = useState({
-    name: '',
-    authority: '',
-    expiry: '',
-    type: '',
+  const [formData, setFormData] = useState({
+    sub_name: '',
+    sub_type: '',
+    issuing_authority: '',
+    issuing_date: '',
+    expiring_date: '',
     amount: '',
     reference: '',
+    owner_first_name: '',
+    owner_last_name: '',
+    owner_email: '',
+    owner_department: '',
+    associated_documents: null,
   });
   const [editIndex, setEditIndex] = useState(null);
 
+
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/subscriptions/');
+        setSubscriptions(response.data);
+      } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+      }
+    };
+    fetchSubscriptions();
+  }, []);
+
   const handleChange = (e) => {
-    setformData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
   };
+
+  const handleFileChange = (e) => {
+    setFormData({
+      ...formData,
+      associated_documents: e.target.files[0],
+    });
+  };
+
 
   const openModal = (sub = null, index = null) => {
     if (sub) {
-      setformData(sub);
+      setFormData(sub);
       setEditIndex(index);
     } else {
-      setformData({
-        name: '',
-        authority: '',
-        expiry: '',
-        type: '',
+      setFormData({
+        sub_name: '',
+        sub_type: '',
+        issuing_authority: '',
+        issuing_date: '',
+        expiring_date: '',
         amount: '',
         reference: '',
+        owner_first_name: '',
+        owner_last_name: '',
+        owner_email: '',
+        owner_department: '',
+        associated_documents: null,
       });
       setEditIndex(null);
     }
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editIndex !== null) {
-      const updated = [...subscriptions];
-      updated[editIndex] = formData;
-      setSubscriptions(updated);
-    } else {
-      setSubscriptions([...subscriptions, formData]);
+    const formDataToSend = new FormData();
+
+    for (const key in formData) {
+      if (formData[key]) {
+        formDataToSend.append(key, formData[key]);
+      }
     }
-    setShowModal(false);
-    setformData({
-      name: '',
-      authority: '',
-      expiry: '',
-      type: '',
-      amount: '',
-      reference: '',
-    });
-    setEditIndex(null);
+
+    try {
+      if (editIndex !== null) {
+        const updatedSubscriptions = [...subscriptions];
+        updatedSubscriptions[editIndex] = formData;
+        setSubscriptions(updatedSubscriptions);
+
+        await axios.put(`http://127.0.0.1:8000/api/subscriptions/update/${subscriptions[editIndex].id}/`, formDataToSend);
+      } else {
+      
+        const response = await axios.post('http://127.0.0.1:8000/api/subscriptions/create/', formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setSubscriptions([...subscriptions, response.data]);
+      }
+      setShowModal(false);
+      setFormData({
+        sub_name: '',
+        sub_type: '',
+        issuing_authority: '',
+        issuing_date: '',
+        expiring_date: '',
+        amount: '',
+        reference: '',
+        owner_first_name: '',
+        owner_last_name: '',
+        owner_email: '',
+        owner_department: '',
+        associated_documents: null,
+      });
+      setEditIndex(null);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
   };
 
-  const handleDelete = (index) => {
-    const updated = [...subscriptions];
-    updated.splice(index, 1);
-    setSubscriptions(updated);
+  
+  const handleDelete = async (index) => {
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/subscriptions/delete/${subscriptions[index].id}/`);
+      const updated = [...subscriptions];
+      updated.splice(index, 1);
+      setSubscriptions(updated);
+    } catch (error) {
+      console.error('Error deleting subscription:', error);
+    }
   };
 
   return (
@@ -84,15 +239,96 @@ export default function Subscriptions() {
           <div className="modal">
             <h2>{editIndex !== null ? 'Edit' : 'Add'} Subscription</h2>
             <form onSubmit={handleSubmit}>
-              <input name="name" placeholder="Name" value={formData.name} onChange={handleChange} required />
-              <input name="authority" placeholder="Issuing Authority" value={formData.authority} onChange={handleChange} required />
-              <input type="date" name="expiry" value={formData.expiry} onChange={handleChange} required />
-              <input name="type" placeholder="Subscription Type" value={formData.type} onChange={handleChange} required />
-              <input name="amount" type="number" placeholder="Amount" value={formData.amount} onChange={handleChange} required />
-              <input name="reference" placeholder="Reference Number" value={formData.reference} onChange={handleChange} required />
+              <input
+                name="sub_name"
+                placeholder="Subscription Name"
+                value={formData.sub_name}
+                onChange={handleChange}
+                required
+              />
+              <input
+                name="sub_type"
+                placeholder="Subscription Type"
+                value={formData.sub_type}
+                onChange={handleChange}
+                required
+              />
+              <input
+                name="issuing_authority"
+                placeholder="Issuing Authority"
+                value={formData.issuing_authority}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="date"
+                name="issuing_date"
+                value={formData.issuing_date}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="date"
+                name="expiring_date"
+                value={formData.expiring_date}
+                onChange={handleChange}
+                required
+              />
+              <input
+                name="amount"
+                type="number"
+                placeholder="Amount"
+                value={formData.amount}
+                onChange={handleChange}
+                required
+              />
+              <input
+                name="reference"
+                placeholder="Reference Number"
+                value={formData.reference}
+                onChange={handleChange}
+                required
+              />
+              <input
+                name="owner_first_name"
+                placeholder="Owner's First Name"
+                value={formData.owner_first_name}
+                onChange={handleChange}
+                required
+              />
+              <input
+                name="owner_last_name"
+                placeholder="Owner's Last Name"
+                value={formData.owner_last_name}
+                onChange={handleChange}
+                required
+              />
+              <input
+                name="owner_email"
+                type="email"
+                placeholder="Owner's Email"
+                value={formData.owner_email}
+                onChange={handleChange}
+                required
+              />
+              <input
+                name="owner_department"
+                placeholder="Owner's Department"
+                value={formData.owner_department}
+                onChange={handleChange}
+                required
+              />
+              <input
+                type="file"
+                name="associated_documents"
+                onChange={handleFileChange}
+                accept="application/pdf,image/*" 
+              />
               <div className="modal-actions">
                 <button type="submit">{editIndex !== null ? 'Update' : 'Save'}</button>
-                <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="button" onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
               </div>
             </form>
           </div>
@@ -106,9 +342,11 @@ export default function Subscriptions() {
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Issuing Authority</TableHead>
+              <TableHead>Issuing Date</TableHead>
               <TableHead>Expiry Date</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Reference</TableHead>
+              <TableHead>Assigned</TableHead>
               <TableHead>Action</TableHead> 
             </TableRow>
           </TableHeader>
@@ -118,20 +356,13 @@ export default function Subscriptions() {
                 <TableCell>{sub.sub_name}</TableCell>
                 <TableCell>{sub.sub_type}</TableCell>
                 <TableCell>{sub.issuing_authority}</TableCell>
+                <TableCell>{new Date(sub.issuing_date).toLocaleDateString()}</TableCell>
                 <TableCell>{new Date(sub.expiring_date).toLocaleDateString()}</TableCell>
-                <TableCell>${sub.amount}</TableCell>
+                <TableCell>Ksh.{sub.amount}</TableCell>
                 <TableCell>{sub.reference}</TableCell>
+                <TableCell>{sub.user ? sub.user : "N/A"}</TableCell>
                 <TableCell>
-                  <div className="card-actions">
-                   
-                    <button onClick={() => openModal(sub, index)} className="btn-edit">
-                      Edit
-                    </button>
-                 
-                    <button onClick={() => handleDelete(index)} className="btn-delete">
-                      Delete
-                    </button>
-                  </div>
+                  <ActionMenu sub={sub} index={index} openModal={openModal} handleDelete={handleDelete} />
                 </TableCell>
               </TableRow>
             ))}
@@ -145,7 +376,7 @@ export default function Subscriptions() {
         background: white;
         padding: 24px;
         border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
 
         .add-btn-container {
@@ -259,8 +490,8 @@ export default function Subscriptions() {
         }
         
         .table-container {
-          border: 1px solid #e0e0e0;
-          border-radius: 10px;
+          border: px solid #111111;
+       
           overflow: hidden;
         }
 
@@ -274,8 +505,8 @@ export default function Subscriptions() {
 
         th,
         td {
-          padding: 12px 15px;
-          border: 0px solid #e0e0e0;
+          padding: 8px 15px;
+          border-bottom: 1px solid black;
         }
 
         th {
@@ -292,11 +523,11 @@ export default function Subscriptions() {
         }
 
         tbody tr:nth-child(even) {
-          background-color: #f9f9f9;
+          background-color: #fff;
         }
 
         tbody tr:hover {
-          background-color: #f1f1f1;
+          background-color: #fff;
         }
 
         caption {

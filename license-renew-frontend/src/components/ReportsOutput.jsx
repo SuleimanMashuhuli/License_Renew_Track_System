@@ -11,21 +11,8 @@ const ReportsOutput = ({ data }) => {
  
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/reports/subscription/")
-      .then(res => res.json())
-      .then(data => setSubscriptions(data));
-
-    fetch("http://127.0.0.1:8000/reports/subscription-type/")
-      .then(res => res.json())
-      .then(data => setSubscriptionTypes(data.subscription_types));
-
-    fetch("http://127.0.0.1:8000/reports/providers/")
-      .then(res => res.json())
-      .then(data => setProviders(data.providers));
-
-    fetch("http://127.0.0.1:8000/reports/subscription-data/")
-      .then(res => res.json())
-      .then(data => {
+    fetch("http://127.0.0.1:8000/api/subscriptions/")
+      .then(res =>  {
         console.log("Fetched:", data.list);
         setSubscriptionData(data.list || []); })
       .catch(error => console.error("Error fetching subscription data:", error));
@@ -104,11 +91,11 @@ const ReportsOutput = ({ data }) => {
           <tbody>
             {subscriptionData?.map((sub, index) => (
               <tr key={index}>
-                <td>{sub.providers__service_provider || "N/A"}</td>
-                <td>{sub.subscription_type || "N/A"}</td>
-                <td>Kshs.{sub.amount_paid || "0.00"}</td>
-                <td>{sub.issue_date || "N/A"}</td>
-                <td>{sub.expiry_date || "N/A"}</td>
+                <td>{sub.issuing_authority || "N/A"}</td>
+                <td>{sub.sub_type || "N/A"}</td>
+                <td>Kshs.{sub.amount || "0.00"}</td>
+                <td>{sub.issuing_date || "N/A"}</td>
+                <td>{sub.expiring_date || "N/A"}</td>
               </tr>
             ))}
           </tbody>
@@ -118,12 +105,6 @@ const ReportsOutput = ({ data }) => {
       {/* Styles */}
       <style>
         {`
-          .reports-container {
-            padding: 1.5rem;
-            background-color: #f8f9fa;
-            margin: 0;
-            font-family: 'Cormorant', serif;
-          }
 
           h2 {
             color: black;

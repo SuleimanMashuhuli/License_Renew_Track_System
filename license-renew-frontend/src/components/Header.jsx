@@ -100,7 +100,7 @@ export default function Header() {
                         justify-content: space-between;
                         align-items: center;
                         padding: 1rem;
-                        border-bottom: 1px solid #e5e7eb;
+                        border-bottom: 1px solid hsl(226.2 57% 21%);;
                         background-color: white;
                     }
 

@@ -82,28 +82,28 @@ export default function RenewalsPage() {
 
       <style>{`
         .renewals-page {
-           background: white;
-        padding: 24px;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);4
+          background: white;
+          padding: 24px;
+          border-radius: 8px;
+          // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);4
         }
         h2 {
         font-weight: 400;
         }
         .renewals-table {
           width: 100%;
-          border-collapse: collapse;
+         . border-collapse: collapse;
           margin-top: 20px;
         }
         .renewals-table th,
         .renewals-table td {
-          border: 1px solid #ccc;
+        
           padding: 10px;
           text-align: left;
           font-weight: 350;
         }
         .renew-btn {
-          padding: 6px 12px;
+          padding: 4px 12px;
           background-color: #003366;
           color: white;
           border: none;
@@ -163,14 +163,14 @@ export default function RenewalsPage() {
 
         th,
         td {
-          padding: 12px 15px;
-          border: 0px solid #e0e0e0;
+          padding: 8px 15px;
+          border-bottom: 1px solid black;
         }
 
         th {
           background-color: #f5f5f5;
-          font-weight: bold;
-          color: #333;
+          font-weight: 900;
+          color: black;
           text-transform: uppercase;
           font-size: 14px;
         }
@@ -181,7 +181,7 @@ export default function RenewalsPage() {
         }
 
         tbody tr:nth-child(even) {
-          background-color: #f9f9f9;
+          background-color: #fff;
         }
 
         tbody tr:hover {

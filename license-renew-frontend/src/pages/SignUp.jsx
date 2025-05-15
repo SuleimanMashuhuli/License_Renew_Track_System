@@ -6,7 +6,6 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     username: "",
     first_name: "",
-    middle_name: "",
     last_name: "",
     phone_number: "",
     email: "",
@@ -42,7 +41,7 @@ const SignUp = () => {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/user/sign_up/", {
+      const response = await fetch("http://127.0.0.1:8000/api/user/sign_up/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -62,26 +61,27 @@ const SignUp = () => {
 
   return (
     <div className="signup-box">
-      <div className="signup-left">
-        <div>
-          <div className="logo">ABC Bank Renew</div>
-          <h11 className="headline">Register to Join us today!</h11>
-          <p className="description">
-            Track and manage your licenses with ease and never miss a renewal.
-          </p>
+       <div className="signup-left">
+      <div className="left-overlay" />
+
+          <img src="/logoWhite.png" className="scatter-logo logo1" alt="logo" />
+          <img src="/logoWhite.png" className="scatter-logo logo2" alt="logo" />
+          <img src="/logoWhite.png" className="scatter-logo logo3" alt="logo" />
+          <img src="/logoWhite.png" className="scatter-logo logo4" alt="logo" />
+
+        <div className="left-content">
+          <p className="description">Amazingly.Better.Choice.</p>
         </div>
-        <button className="learn-more-btn">Learn more</button>
       </div>
 
       <div className="signup-right">
         <form onSubmit={handleSubmit} className="signup-form">
-          <h2 className="form-title">Sign Up</h2>
+          <h2 className="form-title">Register to login</h2>
 
           {error && <p className="error">{error}</p>}
           {success && <p className="success">{success}</p>}
 
           <input type="text" name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleChange} required />
-          <input type="text" name="middle_name" placeholder="Middle Name" value={formData.middle_name} onChange={handleChange} required />
           <input type="text" name="last_name" placeholder="Last Name" value={formData.last_name} onChange={handleChange} required />
           <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />
           <input type="text" name="phone_number" placeholder="Phone Number" value={formData.phone_number} onChange={handleChange} />
@@ -102,176 +102,194 @@ const SignUp = () => {
         </form>
       </div>
       <style>
-        {`/* Make signup-box full-screen */
-.signup-box {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  border-radius: 0;
-  overflow: hidden;
-  box-shadow: none;
-}
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
 
-.signup-left {
-  width: 70%;
-  background: linear-gradient(to bottom right, #1e3a8a, #3b82f6);
-  color: white;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
 
-.logo {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 40px;
-}
 
-.headline {
-  font-size: 36px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
+          .signup-box {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: none;
+          }
 
-.description {
-  font-size: 14px;
-  color: #d1d5db;
-}
+          .signup-left {
+            width: 50%;
+            position: relative;
+            background-color: hsl(224.4, 64.3%, 32.9%);
+            color: white;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+              align-items: center;
+          }
+          .left-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1;
+          }
+            .scatter-logo {
+            position: absolute;
+            width: 100px;
+            opacity: 5; 
+            mix-blend-mode: screen;
+            z-index: 0;
+          }
 
-.learn-more-btn {
-  background-color: white;
-  color: #1e3a8a;
-  font-weight: bold;
-  padding: 10px 16px;
-  border-radius: 9999px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  border: none;
-  cursor: pointer;
-  transition: background 0.3s ease;
-  width: 120px;
-}
+          .logo1 {
+            top: 10%;
+            left: 15%;
+          }
+          .logo2 {
+            top: 40%;
+            left: 60%;
+          }
+          .logo3 {
+            bottom: 20%;
+            left: 25%;
+          }
+          .logo4 {
+            bottom: 10%;
+            right: 15%;
+          }
 
-.learn-more-btn:hover {
-  background-color: #e0e7ff;
-}
+          .left-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 40px;
+          }
+          .description {
+            font-size: 60px;
+            color: #e5e7eb;
+            text-align: center;
+            font-family: "IBM Plex Mono", monospace;
+            font-weight: 400;
+            font-style: normal;
+          }
 
-/* Right side */
-.signup-right {
-  width: 30%;
-  background: white;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
+          .signup-right {
+            width: 50%;
+            background: white;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
 
-.signup-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+          .signup-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 70%;
+          }
 
-.form-title {
-  text-align: center;
-  color: #1e3a8a;
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
+          .form-title {
+            text-align: center;
+            color: #1e3a8a;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
 
-.signup-form input {
-  padding: 10px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-}
+          .signup-form input {
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+          }
 
-.submit-btn {
-  background-color: #2563eb;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
+          .submit-btn {
+            background-color: hsl(224.4, 64.3%, 32.9%);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+          }
 
-.submit-btn:hover {
-  background-color: #1d4ed8;
-}
+          .submit-btn:hover {
+            background-color: #1d4ed8;
+          }
 
-.error {
-  color: #dc2626;
-  text-align: center;
-  font-size: 14px;
-}
+          .error {
+            color: #dc2626;
+            text-align: center;
+            font-size: 14px;
+          }
 
-.success {
-  color: #16a34a;
-  text-align: center;
-  font-size: 14px;
-}
+          .success {
+            color: #16a34a;
+            text-align: center;
+            font-size: 14px;
+          }
 
-.login-link {
-  text-align: center;
-  font-size: 14px;
-  margin-top: 8px;
-}
+          .login-link {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 8px;
+          }
 
-.signin-link {
-  color: #2563eb;
-  text-decoration: none;
-}
+          .signin-link {
+            color: #2563eb;
+            text-decoration: none;
+          }
 
-.signin-link:hover {
-  text-decoration: underline;
-}
-  /* Mobile and tablet responsiveness */
-@media (max-width: 768px) {
-  .signup-box {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-  }
+          .signin-link:hover {
+            text-decoration: underline;
+          }
 
-  .signup-left,
-  .signup-right {
-    width: 100%;
-    padding: 30px;
-  }
+          @media (max-width: 768px) {
+            .signup-box {
+              flex-direction: column;
+              height: auto;
+              min-height: 100vh;
+            }
 
-  .signup-left {
-    align-items: center;
-    text-align: center;
-  }
+            .signup-left,
+            .signup-right {
+              width: 100%;
+              padding: 30px;
+            }
 
-  .learn-more-btn {
-    margin: 20px auto 0 auto;
-  }
+            .signup-left {
+              align-items: center;
+              text-align: center;
+            }
 
-  .form-title {
-    font-size: 20px;
-  }
+            .learn-more-btn {
+              margin: 20px auto 0 auto;
+            }
 
-  .signup-form input {
-    font-size: 13px;
-    padding: 8px 12px;
-  }
+            .form-title {
+              font-size: 20px;
+            }
 
-  .submit-btn {
-    font-size: 14px;
-    padding: 10px;
-  }
+            .signup-form input {
+              font-size: 13px;
+              padding: 8px 12px;
+            }
 
-  .login-link {
-    font-size: 13px;
-  }
-}
+            .submit-btn {
+              font-size: 14px;
+              padding: 10px;
+            }
 
-`}
+            .login-link {
+              font-size: 13px;
+            }
+          }
+
+        `}
       </style>
     </div>
   );

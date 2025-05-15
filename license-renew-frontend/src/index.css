@@ -1,41 +1,205 @@
-/* 
-body {
-    font-family: Arial, sans-serif;
-}
-
-
-header {
-    justify-content: space-between;
-    color: white;
-    display: flex;
-    align-items: center;
-    background-color: #0a51cc;
-    padding: 15px;
-    height: 40px;
-}
-
-
-.nav-link {
-    display: flex;
-    list-style: none;
+html, body, #root {
+    height: 100%;
+    margin: 0;
     padding: 0;
-    gap: 20px;
-}
-
-.nav-link li {
-    display: inline;
-}
-
-.nav-link a {
+    }
+    @import url('~@fortawesome/fontawesome-free/css/all.min.css');
+    @import url('https://fonts.cdnfonts.com/css/italianno');
+    @import url('https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css');
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300..700;1,300..700&display=swap');
+    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css');
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap');
+    
+    * {
+        box-sizing: border-box;
+      }
+      
+    body {
+        margin: 0;
+        font-family: "Roboto Slab", serif;
+    }
+    .page5 {
+        padding: 40px;
+        background-color: #FFF;
+        }
+        
+        .page5 .box {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page5 h {
+        display: block;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+        }
+        
+        .pg5-container details {
+        margin-bottom: 15px;
+        font-size: 1rem;
+        }
+        
+        .pg5-container summary {
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px;
+        background: #eaeaea;
+        border-radius: 5px;
+        }
+        
+        .pg5-container p {
+        padding: 10px 20px;
+        background: #f4f4f4;
+        border-left: 3px solid #003366;
+        margin-top: 5px;
+        text-align: justify;
+        }
+        
+        @media (max-width: 768px) {
+        .page5 {
+            padding: 20px;
+        }
+        
+        .page5 .box {
+            padding: 20px;
+        }
+        
+        .page5 h {
+            font-size: 1.5rem;
+        }
+        
+        .pg5-container p {
+            font-size: 0.95rem;
+            padding: 10px;
+        }
+        
+        .pg5-container summary {
+            font-size: 1rem;
+        }
+        }
+        
+        @media (max-width: 480px) {
+        .page5 {
+            padding: 10px;
+        }
+        
+        .page5 h {
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        
+        .pg5-container summary,
+        .pg5-container p {
+            font-size: 0.9rem;
+        }
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            }
+            
+            .user-profile img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;    
+            object-fit: cover;        
+            }
+              
+            .modal-overlay {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            border-radius: 8px;
+            padding: 1rem;
+            z-index: 999;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            }
+            .modal-toggle:checked + .modal-overlay {
+            display: block;
+            }
+            .modal-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            position: relative;
+            }
+            .license-profile-image {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            }
+            .license-profile-image img {
+            width: 40px; 
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 1rem; 
+            }
+            .license-profile-image h2 {
+            font-size: 16px;
+            font-weight: 500;
+            color: #FFF;
+            margin: 0;
+            }
+            .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: white;
+            }
+            .action-Btn {
+            padding: 10px 15px;
+            border: none;
+            background-color: #003366;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            }
+            .action-Btn a {
+                color: white;
+            }
+        
+nav {
+    flex: 1;
+  }
+  
+  .nav-links {
+    display: flex;
+    justify-content: end; 
+    align-items: center;
+    list-style: none;
+    gap: 30px; 
+    margin: 0;
+    padding: 0;
+    margin-right: 100px;
+  }
+  
+  .nav-links li a {
     text-decoration: none;
-    color: white;
-    font-size: 16px;
-}
-
-.nav-link a:hover {
-    text-decoration-thickness: 10px;
-}
-
-.footer {
-    color: white;
-} */
+    color: #003366;
+    font-weight: 500;
+    font-size: 1.5rem; 
+    transition: color 0.3s;
+  }
+  
+  .nav-links li a:hover {
+    color: #3498db;
+  }

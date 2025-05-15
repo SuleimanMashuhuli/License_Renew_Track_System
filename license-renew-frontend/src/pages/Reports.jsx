@@ -9,7 +9,7 @@ const Reports = () => {
 
  
   useEffect(() => {
-    fetch('http://localhost:8000/licenseS/') 
+    fetch('http://localhost:8000/api/subscriptions/') 
       .then((response) => response.json())
       .then((data) => {
         setData(data);  

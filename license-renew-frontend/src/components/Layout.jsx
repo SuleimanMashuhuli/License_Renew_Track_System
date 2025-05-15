@@ -13,7 +13,13 @@ export default function Layout() {
             </div>
         </div>
         <style>
-            {`.admin-layout {
+            {`
+               html, body, #root {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                }
+                .admin-layout {
                 display: flex;
                 height: 100vh;
                 box-sizing: border-box;            
@@ -30,7 +36,7 @@ export default function Layout() {
                 flex: 1;
                 padding: 2rem;
                 overflow: auto;
-                 background-color: hsl(220 13% 91%);
+                background-color: #fff;
                 }
             `}
         </style>

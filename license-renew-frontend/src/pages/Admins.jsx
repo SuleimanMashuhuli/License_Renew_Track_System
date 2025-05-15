@@ -177,7 +177,7 @@ export default function Admins () {
         background: white;
         padding: 24px;
         border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
 
         .add-btn-container {

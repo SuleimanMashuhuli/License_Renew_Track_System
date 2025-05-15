@@ -27,8 +27,6 @@ const ViewDetails = () => {
     };
 
 
-// ----DELETE---- //
-
  useEffect(() => {
        
         fetchLicenses();
@@ -66,11 +64,6 @@ const ViewDetails = () => {
 
                 {licenses.map((license) =>(
                 <div key={license.id} >
-            
-                <div className="delete-container">
-                    <label>Want to delete license? &nbsp;</label>
-                    <button onClick={() => handleDelete(license.id)} className="delete-button">DELETE</button>
-                </div>
                 
                 </div>
                 ))}

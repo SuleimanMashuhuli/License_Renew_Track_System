@@ -9,12 +9,16 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 #-----v2-------#
-from .views import create_admin, list_subscriptions, get_subscriptions, delete_subscriptions, SubscriptionsUpdateView, SubscriptionsViewSet, trigger_email, create_subscription_expiry_notification, mark_notification_as_read, get_notifications, get_unread_notifications
+from .views import create_admin, create_subscription, list_subscriptions, get_subscriptions, delete_subscriptions, SubscriptionsUpdateView, SubscriptionsViewSet, trigger_email, create_subscription_expiry_notification, mark_notification_as_read, get_notifications, get_unread_notifications
+from .views import UserViewSet, list_user, get_user, delete_user, UserUpdateView, SignUpView
+from .views import SignInView, VerifyOTPView, ResendOTPView, set_user_password, ForgotPasswordView, ResetPasswordView
+
 
 
 # Router for ViewSet
 router = DefaultRouter()
-router.register(r'subscriptions/viewset', SubscriptionsViewSet, basename='subscriptions-viewset')
+router.register(r'subscriptions', SubscriptionsViewSet, basename='subscriptions-viewset')
+router.register(r'users', UserViewSet)
 
  
 
@@ -57,10 +61,24 @@ urlpatterns = [
 
 
     #------v2------#
-    # Admin & Employee
+    path('user/sign_in/', SignInView.as_view(), name='sign_in'),
+    path('user/verify_otp/', VerifyOTPView.as_view(), name='verify_otp'),
+    path('user/resend_otp/', ResendOTPView.as_view(), name='resend_otp'),
+    path('user/set_password/', set_user_password, name='set_password'),
+    path('user/sign_up/', SignUpView.as_view(), name='sign_up'),
+    path('forgot_password/', ForgotPasswordView.as_view(), name='forgot-password'),
+    path('reset_password/<uidb64>/<token>/', ResetPasswordView.as_view(), name='reset-password'),
+
+
+    # Admin
     path('admin/create/', create_admin, name='create_admin'),
+    path('users/list/', list_user, name='list_user'), 
+    path('users/<int:id>/', get_user, name='get_user'), 
+    path('users/<int:id>/delete/', delete_user, name='delete_user'),
+    path('users/<int:id>/update/', UserUpdateView.as_view(), name='update_user'),
 
     # Subscriptions
+    path('subscriptions/create/', create_subscription, name='create_subscription'),
     path('subscriptions/', list_subscriptions, name='list_subscriptions'),
     path('subscriptions/<int:id>/', get_subscriptions, name='get_subscription'),
     path('subscriptions/delete/<int:id>/', delete_subscriptions, name='delete_subscription'),

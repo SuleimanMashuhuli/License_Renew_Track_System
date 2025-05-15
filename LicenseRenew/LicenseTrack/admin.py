@@ -2,7 +2,7 @@ from django.contrib import admin
 # from .models import Users, Providers, Subscription, Renewals
 
 #----V2-----#
-from .models import User, Subscriptions, Notification
+from .models import User, Subscriptions, Notification, Renewing
 
 
 
@@ -52,13 +52,13 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Subscriptions)
 class SubscriptionsAdmin(admin.ModelAdmin):
     list_display = (
-        'sub_type', 'owner_first_name', 'owner_last_name',
+        'sub_name', 'sub_type', 'owner_first_name', 'owner_last_name',
         'owner_email', 'owner_department', 'issuing_date',
         'expiring_date', 'amount', 'user', 'is_document_uploaded',
         'status_display'
     )
-    list_filter = ('expiring_date', 'owner_department', 'is_document_uploaded')
-    search_fields = ('sub_type', 'owner_email', 'owner_first_name', 'owner_last_name')
+    list_filter = ('expiring_date', 'owner_department', 'issuing_authority')
+    search_fields = ('sub_name', 'owner_email', 'owner_first_name', 'owner_last_name')
 
     def status_display(self, obj):
         return obj.status()
@@ -70,3 +70,13 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ('recipient', 'message', 'read', 'created_at')
     list_filter = ('read', 'created_at')
     search_fields = ('recipient__username', 'message')  
+
+
+@admin.register(Renewing)
+class RenewingAdmin(admin.ModelAdmin):
+    list_display = (
+        'subscriptions', 'renewed_by', 'renewal_date',
+        'new_expiry_date', 'paid_amount'
+    )
+    search_fields = ('subscriptions__sub_name', 'renewed_by__username')
+    list_filter = ('renewal_date',)

@@ -20,13 +20,16 @@ export default function Sidebar() {
         <div className="sidebar-link">
           <Link to="renewing"><i className="fa fa-refresh" aria-hidden="true"></i>&nbsp; Renewals</Link>
         </div>
+        <div className="sidebar-link">
+          <Link to="admins/manage"><i className="fa-solid fa-user-gear" aria-hidden="true"></i>&nbsp; Manage Admins</Link>
+        </div>
         <div className="sidebar-link dropdown">
           <button className="dropbtn">
             <i className="fas fa-tasks" aria-hidden="true"></i>&nbsp; Activities
           </button>
           <div className="dropdown-content">
-            <Link to="admins/manage">Manage Admins</Link>
-            <Link to="admins/logs">View Logs</Link>
+            <Link to="reports">Reports</Link>
+            <Link to="admins/logs">Logs</Link>
           </div>
         </div>
       </div>
@@ -43,7 +46,7 @@ export default function Sidebar() {
       <style>
         {`
           .sidebar {
-            width: 19rem;
+            width: 20rem;
             background-color: #FFF;
             color: hsl(224.4, 64.3%, 32.9%);
             display: flex;
@@ -51,7 +54,8 @@ export default function Sidebar() {
             justify-content: space-between;
             height: auto;
             overflow: hidden;
-            border-right: 0.1px solid hsl(224.4, 64.3%, 32.9%);
+            border-right: 0.1px solid hsl(220 13% 91%);
+            background-color: hsl(220 13% 91%);
           }
 
           .sidebar-header,
@@ -60,7 +64,7 @@ export default function Sidebar() {
           }
 
           .sidebar-header {
-            border-bottom: 1px solid;
+            border-bottom: 4px solid hsl(226.2 57% 21%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -80,7 +84,7 @@ export default function Sidebar() {
 
           .sidebar-link {
             position: relative;
-            background-color: #FFF;
+            // background-color: #FFF;
             padding: 0.55rem 1rem;
             margin-bottom: 1rem;
             border-radius: 6px;
@@ -96,6 +100,7 @@ export default function Sidebar() {
             color: hsl(224.4, 64.3%, 32.9%);
             text-decoration: none;
             font-weight: 500;
+            font-size: 16px;
             display: block;
           }
 

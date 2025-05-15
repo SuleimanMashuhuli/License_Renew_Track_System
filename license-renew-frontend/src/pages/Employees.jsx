@@ -1,151 +1,46 @@
-import React, { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../components/Table.jsx';
-
+import React, { useState, useEffect } from "react";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '../components/Table.jsx';
 
 export default function UserManagement() {
-  const [users, setUsers] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    department: "",
-  });
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [selectedOwnerEmail, setSelectedOwnerEmail] = useState(null);
+  const [selectedOwnerSubscriptions, setSelectedOwnerSubscriptions] = useState([]);
 
-  const [subscriptions, setSubscriptions] = useState([
-    { name: "Subscription 1", type: "Type 1" },
-  ]);
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [allSelected, setAllSelected] = useState(false);
-
-
-
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const openModal = (user = null, index = null) => {
-    if (user) {
-      setFormData(user);
-      setEditingIndex(index);
-    } else {
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        department: "",
-      });
-      setEditingIndex(null);
-    }
-    setShowModal(true);
-  };
-
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (editingIndex !== null) {
-      const updatedUsers = [...users];
-      updatedUsers[editingIndex] = formData;
-      setUsers(updatedUsers);
-    } else {
-      setUsers([...users, formData]);
-    }
-    setShowModal(false);
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      department: "",
-    });
-  };
-
-
-  const handleSelectRow = (index) => {
-    setSelectedRows((prevSelectedRows) => {
-      if (prevSelectedRows.includes(index)) {
-        return prevSelectedRows.filter((rowIndex) => rowIndex !== index);
-      } else {
-        return [...prevSelectedRows, index];
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/subscriptions/');
+        const data = await response.json();
+        setSubscriptions(data);
+      } catch (error) {
+        console.error("Error fetching subscriptions:", error);
       }
-    });
-  };
+    };
+    fetchSubscriptions();
+  }, []);
 
-  const handleSelectAll = () => {
-    if (allSelected) {
-      setSelectedRows([]);
-    } else {
-      setSelectedRows(subscriptions.map((_, index) => index)); 
-    }
-    setAllSelected(!allSelected);
+  const uniqueOwners = Array.from(
+    new Map(
+      subscriptions.map(sub => [sub.owner_email, sub])
+    ).values()
+  );
+
+  const handleOwnerClick = (email) => {
+    setSelectedOwnerEmail(email);
+    const ownerSubs = subscriptions.filter(sub => sub.owner_email === email);
+    setSelectedOwnerSubscriptions(ownerSubs);
   };
 
   return (
     <div className="employees-page">
       <h1></h1>
       <div className="add-btn-container">
-        <button className="add-btn" onClick={() => openModal()}>
-          <i class="fa-regular fa-plus"></i>&nbsp;&nbsp; Add
+        <button className="add-btn" >
+          <i className="fa-regular fa-plus"></i>&nbsp;&nbsp; View Owners
         </button>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2>{editingIndex !== null ? "Edit" : "Add"} Employee</h2>
-            <form onSubmit={handleFormSubmit}>
-              <input
-                type="text"
-                name="firstName"
-                placeholder="First Name"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                required
-              /><br />
-              <input
-                type="text"
-                name="lastName"
-                placeholder="Last Name"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                required
-              /><br />
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-              /><br />
-              <input
-                type="text"
-                name="department"
-                placeholder="Department"
-                value={formData.department}
-                onChange={handleInputChange}
-                required
-              /><br />
-              <div className="modal-actions">
-                <button type="submit">{editingIndex !== null ? "Update" : "Save"}</button>
-                <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-
-<div className="tables-container" style={{ marginTop: '40px' }}>
+      <div className="tables-container" style={{ marginTop: "40px" }}>
         <div className="employees-table">
           <Table>
             <TableHeader>
@@ -153,21 +48,33 @@ export default function UserManagement() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Department</TableHead>
-                <TableHead>Assigned</TableHead>
+                <TableHead>Holds</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user, index) => (
-                <TableRow key={index}>
-                  <TableCell>{user.firstName} {user.lastName}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.department}</TableCell>
+              {uniqueOwners.map((owner) => (
+                <TableRow
+                  key={owner.owner_email}
+                  className={`transition duration-150 ${
+                    selectedOwnerEmail === owner.owner_email ? "bg-blue-100" : ""
+                  }`}
+                >
                   <TableCell>
-                    <div className="card-actions">
-                      <button onClick={() => openModal(user, index)} className="btn-edit">
-                        Edit
-                      </button>
-                    </div>
+                    <span
+                      onClick={() => handleOwnerClick(owner.owner_email)}
+                      className="text-blue-600 hover:underline cursor-pointer"
+                    >
+                      {owner.owner_first_name} {owner.owner_last_name}
+                    </span>
+                  </TableCell>
+                  <TableCell>{owner.owner_email}</TableCell>
+                  <TableCell>{owner.owner_department}</TableCell>
+                  <TableCell>
+                    { 
+                      subscriptions.filter(
+                        (sub) => sub.owner_email.toLowerCase() === owner.owner_email.toLowerCase()
+                      ).length
+                    }
                   </TableCell>
                 </TableRow>
               ))}
@@ -176,182 +83,184 @@ export default function UserManagement() {
         </div>
 
         <div className="employees-table-right">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>
-                </TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subscriptions.map((sub, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <input
-                      type="checkbox"
-                      checked={selectedRows.includes(index)}
-                      onChange={() => handleSelectRow(index)}
-                      className="select-row-checkbox"
-                    />
-                  </TableCell>
-                  <TableCell>{sub.name}</TableCell>
-                  <TableCell>{sub.type}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {selectedOwnerEmail && (
+            <>
+              {selectedOwnerSubscriptions.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Issuing Authority</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedOwnerSubscriptions.map((sub, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{sub.sub_name}</TableCell>
+                        <TableCell>{sub.sub_type}</TableCell>
+                        <TableCell>{sub.issuing_authority}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p style={{ padding: "1rem", color: "#555" }}>
+                  No subscriptions found for this owner.
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-
-
       <style>{`
-       .employees-page {
-      background: white;
-      padding: 24px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    }
+        .employees-page {
+          background: white;
+          padding: 24px;
+          border-radius: 8px;
+          // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
 
-    .add-btn-container {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 1rem;
-    }
+        .add-btn-container {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 1rem;
+        }
 
-    .add-btn {
-      background-color: hsl(224.4, 64.3%, 32.9%);
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+        .add-btn {
+          background-color: hsl(224.4, 64.3%, 32.9%);
+          color: white;
+          padding: 10px 20px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
 
-    }
-    .add-btn i {
-      font-size: 12px
-      }
+        .add-btn i {
+          font-size: 12px;
+        }
 
-    
-    .tables-container {
-      display: flex;
-      gap: 20px; 
-       overflow: hidden;
-    }
+        .tables-container {
+          display: flex;
+          gap: 20px;
+          overflow: hidden;
+        }
 
- 
-    .employees-table {
-      width: 60%;
-      border: 1px solid #333;
-      border-radius: 10px;
-        overflow: hidden;
-    }
+        .employees-table {
+          width: 60%;
+          // border: 1px solid #333;
+          // border-radius: 10px;
+          overflow: hidden;
+        }
 
-  
-    .employees-table-right {
-      width: 40%;
-      border: 1px solid #333;
-      border-radius: 10px;
-      overflow: hidden;
-    }
+        .employees-table-right {
+          width: 40%;
+          // border: 1px solid #333;
+          // border-radius: 10px;
+          overflow: hidden;
+        }
 
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          text-align: left;
+        }
 
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
+        th, td {
+          padding: 8px 15px;
+          border-bottom: 1px solid black;
+        }
 
-    .modal {
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      width: 50%;
-      max-width: 600px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    }
+        th {
+          background-color: #f5f5f5;
+          font-weight: bold;
+          color: #333;
+          text-transform: uppercase;
+          font-size: 14px;
+        }
 
-    .modal h2 {
-      margin-bottom: 1rem;
-    }
+        td {
+          font-size: 13px;
+          color: #555;
+        }
 
-    .modal input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
+        tbody tr:nth-child(even) {
+          background-color: #fff;
+        }
 
-    .modal-actions {
-      display: flex;
-      justify-content: space-between;
-    }
+        tbody tr:hover {
+          background-color: #f1f1f1;
+        }
 
-    .modal-actions button {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-    }
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
 
-    .modal-actions button:first-child {
-      background-color: #003366;
-      color: white;
-    }
+        .modal {
+          background: white;
+          padding: 2rem;
+          border-radius: 8px;
+          width: 50%;
+          max-width: 600px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
 
-    .modal-actions button:last-child {
-      background-color: #ccc;
-    }
+        .modal h2 {
+          margin-bottom: 1rem;
+        }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      caption-side: bottom;
-    }
+        .modal input {
+          width: 100%;
+          padding: 8px;
+          margin-bottom: 1rem;
+          border: 1px solid #ccc;
+          }
+          border-radius: 4px;
 
-    th, td {
-      padding: 12px 15px;
-      border: 0px solid #e0e0e0;
-    }
+        .modal-actions {
+          display: flex;
+          justify-content: space-between;
+        }
 
-    th {
-      background-color: #f5f5f5;
-      font-weight: bold;
-      color: #333;
-      text-transform: uppercase;
-      font-size: 14px;
-      
-    }
+        .modal-actions button {
+          padding: 0.5rem 1rem;
+          border: none;
+          border-radius: 4px;
+        }
 
-    td {
-      font-size: 13px;
-      color: #555;
-    }
+        .modal-actions button:first-child {
+          background-color: #003366;
+          color: white;
+        }
 
-    tbody tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
+        .modal-actions button:last-child {
+          background-color: #ccc;
+        }
 
-    tbody tr:hover {
-      background-color: #f1f1f1;
-    }
+        caption {
+          margin-top: 1rem;
+          font-size: 14px;
+          color: #777;
+          text-align: center;
+        }
 
-    caption {
-      margin-top: 1rem;
-      font-size: 14px;
-      color: #777;
-      text-align: center;
-    }
+        .hover\\:underline:hover {
+          text-decoration: none;
+        }
+
+        .cursor-pointer {
+          cursor: pointer;
+        }
 
       `}</style>
     </div>

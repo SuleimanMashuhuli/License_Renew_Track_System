@@ -8,6 +8,8 @@ const Login = () => {
   });
   const [error, setError] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [otp, setOtp] = useState(new Array(6).fill(""));
+  const [otpSession, setOtpSession] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,21 +30,25 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/user/sign_in/", {
+      const response = await fetch("http://127.0.0.1:8000/api/user/sign_in/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/home");
+        if (data.redirect === "set-password") {
+        
+          navigate("/set-password", { state: { userId: data.user_id } });
+        } else {
+          
+          setOtpSession(data.otp_session);
+        }
       } else {
         setError(data?.message || "Invalid credentials");
       }
-    } catch (error) {
+    } catch {
       setError("An error occurred. Please try again.");
     }
   };
@@ -51,74 +57,168 @@ const Login = () => {
     setPasswordVisible(!passwordVisible);
   };
 
+  const handleInputChange = (index, value) => {
+    if (/[^0-9]/.test(value)) return;
+
+    const updatedOtp = [...otp];
+    updatedOtp[index] = value;
+    setOtp(updatedOtp);
+
+    if (value && index < otp.length - 1) {
+      document.getElementById(`otp-input-${index + 1}`).focus();
+    }
+  };
+
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    const otpCode = otp.join("");
+    if (otpCode.length !== 6) {
+      setError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/user/verify_otp/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          otp_session: otpSession,
+          otp_code: otpCode,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/home");
+      } else {
+        setError(data.message || "Invalid OTP");
+      }
+    } catch {
+      setError("An error occurred. Please try again.");
+    }
+  };
+
+  const handleResend = async () => {
+    setError("");
+    try {
+      const res = await fetch("http://127.0.0.1:8000/user/resend_otp/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otp_session: otpSession }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("A new OTP has been sent to your email.");
+      } else {
+        setError(data.message || "Unable to resend OTP.");
+      }
+    } catch {
+      setError("An error occurred while resending the OTP.");
+    }
+  };
+
+
   return (
-    <div className="signup-box">
-      <div className="signup-left">
-        <div>
-          <h11 className="headline">Welcome Back!</h11>
-          <p className="description">
-            Sign In to track and manage your licenses. Stay ahead of renewals effortlessly.
-          </p>
+    <div className="signin-box">
+      <div className="signin-left">
+      <div className="left-overlay" />
+
+          <img src="/logoWhite.png" className="scatter-logo logo1" alt="logo" />
+          <img src="/logoWhite.png" className="scatter-logo logo2" alt="logo" />
+          <img src="/logoWhite.png" className="scatter-logo logo3" alt="logo" />
+          <img src="/logoWhite.png" className="scatter-logo logo4" alt="logo" />
+
+        <div className="left-content">
+          <p className="description">Amazingly.Better.Choice.</p>
         </div>
-        <div className="login-image">
-            <img
-              src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.webp"
-              alt="Login visual"
-            />
-            
-          </div>
       </div>
 
-      <div className="signup-right">
-        <form onSubmit={handleSubmit} className="signup-form">
-        <img src='/logoWhite.png' className="form-logo" alt='img' />
-          <h2 className="form-title">Sign In</h2>
+      <div className="signin-right">
+        {otpSession === null ? (
+          <form onSubmit={handleSubmit} className="signin-form">
+            <img src="/logO.jpg" className="form-logo" alt="logo" />
+            <h2 className="form-title">Login to your account</h2>
+            {error && <p className="error">{error}</p>}
 
-          {error && <p className="error">{error}</p>}
-
-          <input
-            type="text"
-            name="username"
-            placeholder="Email or Username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
-          <div className="password-wrapper">
             <input
-              type={passwordVisible ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              value={formData.password}
+              type="text"
+              name="username"
+              placeholder="Email or Username"
+              value={formData.username}
               onChange={handleChange}
               required
             />
-            <span className="show-hide-icon" onClick={togglePasswordVisibility}>
-              <i className={passwordVisible ? "fa fa-eye-slash" : "fa fa-eye"}></i>
-            </span>
-          </div>
 
-          <div className="form-options">
-            <label className="form-check-label">
-              <input type="checkbox" className="form-check-input" /> Remember me
-            </label>
-            <Link to="/forgot_password" className="signin-link">
-              Forgot password?
-            </Link>
-          </div>
+            <div className="password-wrapper">
+              <input
+                type={passwordVisible ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+              <span className="show-hide-icon" onClick={togglePasswordVisibility}>
+                <i className={passwordVisible ? "fa fa-eye-slash" : "fa fa-eye"}></i>
+              </span>
+            </div>
 
-          <button type="submit" className="submit-btn">Login</button>
+            <div className="form-options">
+              <label className="form-check-label">
+                <input type="checkbox" className="form-check-input" /> Remember me
+              </label>
+              <Link to="/forgot_password" className="signin-link">Forgot password?</Link>
+            </div>
 
-          <p className="login-link">
-            Don’t have an account?{" "}
-            <Link to="/sign_up" className="signin-link">Register</Link>
-          </p>
-        </form>
+            <button type="submit" className="submit-btn">Login</button>
+
+            <p className="login-link">
+              Don’t have an account?{" "}
+              <Link to="/sign_up" className="signin-link">Register</Link>
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={handleVerify} className="signin-form">
+            <h2 className="form-title">Enter the OTP we emailed you</h2>
+            {error && <p className="error">{error}</p>}
+            <div className="otp-inputs">
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  id={`otp-input-${index}`}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleInputChange(index, e.target.value)}
+                  className="otp-slot"
+                  aria-label={`OTP digit ${index + 1}`}
+                />
+              ))}
+            </div>
+            <div className="button-row">
+              <button type="submit" className="verify-btn" disabled={otp.join("").length !== 6}>
+                Verify
+              </button>
+              <button type="button" className="resend-btn" onClick={handleResend}>
+                Resend Code
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       <style>
   {`
-.signup-box {
+ @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+
+
+.signin-box {
   display: flex;
   height: 100vh;
   width: 100vw;
@@ -127,62 +227,86 @@ const Login = () => {
   box-shadow: none;
 }
 
-.signup-left {
-  width: 70%;
-  background: linear-gradient(to bottom right, #1e3a8a, #3b82f6);
+.signin-left {
+  width: 50%;
+  position: relative;
+  background-color: hsl(224.4, 64.3%, 32.9%);
   color: white;
   padding: 40px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
+    align-items: center;
+}
+.left-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+  .scatter-logo {
+  position: absolute;
+  width: 100px;
+  opacity: 5; 
+  mix-blend-mode: screen;
+  z-index: 0;
 }
 
-.logo {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 40px;
+.logo1 {
+  top: 10%;
+  left: 15%;
+}
+.logo2 {
+  top: 40%;
+  left: 60%;
+}
+.logo3 {
+  bottom: 20%;
+  left: 25%;
+}
+.logo4 {
+  bottom: 10%;
+  right: 15%;
 }
 
-.headline {
-  font-size: 40px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
 
-.description {
-  font-size: 30px;
-  color: #d1d5db;
-}
-.login-image {
-  flex: 2;
+.left-content {
+  position: relative;
+  z-index: 2;
   text-align: center;
+  padding: 40px;
+}
+.description {
+  font-size: 60px;
+  color: #e5e7eb;
+  text-align: center;
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 400;
+  font-style: normal;
 }
 
-.login-image img {
-  width: 100%;
-  max-width: 1000px;
-  height: auto;
-}
-
-.signup-right {
-  width: 30%;
+.signin-right {
+  width: 50%;
   background: white;
   padding: 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
 }
 .form-logo {
-  width: 70%;
+  width: 20%;
   height: auto;
   margin: 0 auto 0px auto;
   display: block;
 }
 
-.signup-form {
+.signin-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 60%;
+  max-width: 600px;
 }
 
 .form-title {
@@ -193,7 +317,7 @@ const Login = () => {
   margin-bottom: 10px;
 }
 
-.signup-form input {
+.signin-form input {
   padding: 10px 14px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -214,7 +338,7 @@ const Login = () => {
 }
 
 .submit-btn {
-  background-color: #2563eb;
+  background-color: hsl(224.4, 64.3%, 32.9%);
   color: white;
   padding: 8px 16px; 
   border: none;
@@ -223,7 +347,7 @@ const Login = () => {
   font-weight: bold;
   cursor: pointer;
   transition: background 0.3s ease;
-  width: 20%; 
+  width: 100%; 
   margin-top: 12px;
 }
 
@@ -257,23 +381,23 @@ const Login = () => {
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
+  
 }
 
-/* Mobile and tablet responsiveness */
 @media (max-width: 768px) {
-  .signup-box {
+  .signin-box {
     flex-direction: column;
     height: auto;
     min-height: 100vh;
   }
 
-  .signup-left,
-  .signup-right {
+  .signin-left,
+  .signin-right {
     width: 100%;
     padding: 30px;
   }
 
-  .signup-left {
+  .signin-left {
     align-items: center;
     text-align: center;
   }
@@ -286,7 +410,7 @@ const Login = () => {
     font-size: 20px;
   }
 
-  .signup-form input {
+  .signin-form input {
     font-size: 13px;
     padding: 8px 12px;
   }
@@ -299,7 +423,7 @@ const Login = () => {
   .login-link {
     font-size: 13px;
   }
-}
+}[]
   `}
 </style>
 

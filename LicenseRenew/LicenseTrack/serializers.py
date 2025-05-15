@@ -5,7 +5,7 @@ from drf_writable_nested import WritableNestedModelSerializer
 # from .models import Subscription, Users, Renewals, Providers, User_Profile
 
 #----v2----#
-from .models import User, Subscriptions, Notification
+from .models import User, Subscriptions, Notification, Renewing
 
 
 # class ProvidersSerializer(serializers.ModelSerializer):
@@ -104,14 +104,17 @@ from .models import User, Subscriptions, Notification
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'mobiNumber', 'userRole']
+        fields = ['id', 'password','username', 'first_name', 'last_name', 'email', 'mobiNumber', 'userRole']
 
 class SubscriptionsSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True) 
     
     class Meta:
         model = Subscriptions
-        fields = '__all__'
+        fields = ['user', 'id', 'sub_name', 'sub_type', 'issuing_authority', 'issuing_date', 'expiring_date', 'amount', 
+                  'reference', 'owner_first_name', 'owner_last_name', 'owner_email', 'owner_department', 
+                  'associated_documents', 'is_document_uploaded', 'status']
+
         read_only_fields = ['user', 'is_document_uploaded']
 
     def create(self, validated_data):
@@ -120,9 +123,26 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
             validated_data['user'] = request.user
         return super().create(validated_data)
 
+
+    def get_status(self, obj):
+        return obj.status()
+
 class NotificationSerializer(serializers.ModelSerializer):
     recipient = serializers.StringRelatedField()
 
     class Meta:
         model = Notification
         fields = ['id', 'recipient', 'message', 'read', 'created_at']
+
+
+class RenewingSerializer(serializers.ModelSerializer):
+    subscriptions = SubscriptionsSerializer(read_only=True)
+    renewed_by = UserSerializer(read_only=True)
+    receipt = serializers.FileField(required=False)
+
+    class Meta:
+        model = Renewing
+        fields = [
+            'id', 'subscriptions', 'renewed_by', 'renewal_date',
+            'new_expiry_date', 'paid_amount', 'receipt', 'notes'
+        ]
