@@ -100,7 +100,7 @@ export default function Sidebar() {
             color: hsl(224.4, 64.3%, 32.9%);
             text-decoration: none;
             font-weight: 500;
-            font-size: 16px;
+            font-size: 18px;
             display: block;
           }
 
@@ -125,7 +125,7 @@ export default function Sidebar() {
             padding: 0;
             cursor: pointer;
             font-family: inherit;
-            font-size: inherit;
+            font-size: 18px;
           }
 
           .dropdown-content {

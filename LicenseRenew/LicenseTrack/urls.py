@@ -10,7 +10,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 #-----v2-------#
 from .views import create_admin, create_subscription, list_subscriptions, get_subscriptions, delete_subscriptions, SubscriptionsUpdateView, SubscriptionsViewSet, trigger_email, create_subscription_expiry_notification, mark_notification_as_read, get_notifications, get_unread_notifications
-from .views import UserViewSet, list_user, get_user, delete_user, UserUpdateView, SignUpView
+from .views import UserViewSet, list_user, get_current_user, get_user, delete_user, UserUpdateView, SignUpView, FullReportAPIView
 from .views import SignInView, VerifyOTPView, ResendOTPView, set_user_password, ForgotPasswordView, ResetPasswordView
 
 
@@ -76,6 +76,8 @@ urlpatterns = [
     path('users/<int:id>/', get_user, name='get_user'), 
     path('users/<int:id>/delete/', delete_user, name='delete_user'),
     path('users/<int:id>/update/', UserUpdateView.as_view(), name='update_user'),
+    path('users/me/', get_current_user, name='get_current_user'),
+
 
     # Subscriptions
     path('subscriptions/create/', create_subscription, name='create_subscription'),
@@ -92,6 +94,9 @@ urlpatterns = [
 
     # Email trigger
     path('notifications/trigger-email/', trigger_email, name='trigger_email'),
+
+    path('full-report/', FullReportAPIView.as_view(), name='fullreport'),
+
 
 
 ]

@@ -57,7 +57,7 @@ class SubscriptionsAdmin(admin.ModelAdmin):
         'expiring_date', 'amount', 'user', 'is_document_uploaded',
         'status_display'
     )
-    list_filter = ('expiring_date', 'owner_department', 'issuing_authority')
+    list_filter = ('sub_type', 'owner_email', 'expiring_date', 'owner_department', 'issuing_authority')
     search_fields = ('sub_name', 'owner_email', 'owner_first_name', 'owner_last_name')
 
     def status_display(self, obj):

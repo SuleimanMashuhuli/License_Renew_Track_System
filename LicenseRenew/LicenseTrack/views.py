@@ -36,7 +36,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, Http
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from django.core.files.storage import default_storage
-from rest_framework.decorators import api_view, APIView, parser_classes, authentication_classes
+from rest_framework.decorators import api_view, permission_classes,APIView, parser_classes, authentication_classes
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -63,7 +63,8 @@ import uuid
 #-----v2-----#
 from .models import Subscriptions, User, Notification
 from .serializers import SubscriptionsSerializer, UserSerializer, NotificationSerializer
-
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 # def extract_text_from_pdf(pdf_file):
@@ -693,6 +694,13 @@ def list_user(request):
     serializer = UserSerializer(admin, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
+
 
 @api_view(['GET'])
 def get_user(request, id):
@@ -775,6 +783,13 @@ def create_subscription(request):
 class SubscriptionsViewSet(viewsets.ModelViewSet):
     queryset = Subscriptions.objects.all().select_related('user') 
     serializer_class = SubscriptionsSerializer
+
+    queryset = Subscriptions.objects.all()
+   
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    
+    filterset_fields = ['sub_type', 'owner_email', 'expiring_date']
+    search_fields = ['sub_type', 'owner_first_name', 'owner_last_name']
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1163,4 +1178,23 @@ class ResetPasswordView(APIView):
 
         except (get_user_model().DoesNotExist, ValueError, TypeError):
             return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FullReportAPIView(APIView):
+       def get(self, request):
+        metrics = Subscriptions.objects.aggregate(
+            total_subscriptions=Count('id'),
+            active_subscriptions=Count('id', filter=Q(expiring_date__gte=now().date())),
+            expired_subscriptions=Count('id', filter=Q(expiring_date__lt=now().date())),
+            total_revenue=Sum('amount')
+        )
+        list_data = list(Subscriptions.objects.values(
+            'issuing_authority', 'sub_type', 'amount', 'issuing_date', 'expiring_date'
+        ))
+
+        return Response({
+            'metrics': metrics,
+            'list': list_data
+        })
+
 
