@@ -7,6 +7,8 @@ export default function Sidebar() {
         <img src="/logO1.png" alt="Logo" className="sidebar-logo" />
       </div>
 
+      <hr />
+      
       <div className="sidebar-content">
         <div className="sidebar-link">
           <Link to="dashboard"><i className="fa fa-home" aria-hidden="true"></i>&nbsp; Dashboard</Link>
@@ -21,12 +23,14 @@ export default function Sidebar() {
           <Link to="renewing"><i className="fa fa-refresh" aria-hidden="true"></i>&nbsp; Renewals</Link>
         </div>
         <div className="sidebar-link">
-          <Link to="admins/manage"><i className="fa-solid fa-user-gear" aria-hidden="true"></i>&nbsp; Manage Admins</Link>
+          <Link to="admins/manage"><i className="fa-solid fa-user-gear" aria-hidden="true"></i>&nbsp; Admins</Link>
         </div>
         <div className="sidebar-link dropdown">
-          <button className="dropbtn">
+          <div className="dropdown-header">
             <i className="fas fa-tasks" aria-hidden="true"></i>&nbsp; Activities
-          </button>
+            &nbsp;
+            <i className="fas fa-caret-right arrow-icon" aria-hidden="true"></i>
+          </div>
           <div className="dropdown-content">
             <Link to="reports">Reports</Link>
             <Link to="admins/logs">Logs</Link>
@@ -54,7 +58,7 @@ export default function Sidebar() {
             justify-content: space-between;
             height: auto;
             overflow: hidden;
-            border-right: 0.1px solid hsl(220 13% 91%);
+            border-right: 1px solid #ccc;
             background-color: hsl(220 13% 91%);
           }
 
@@ -64,19 +68,28 @@ export default function Sidebar() {
           }
 
           .sidebar-header {
-            border-bottom: 4px solid hsl(226.2 57% 21%);
+            position: relative; 
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100px;
+            border-bottom: none; 
           }
 
+          .sidebar-header::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%; 
+            border-bottom: 1px solid hsl(226.2 57% 21%);
+          }
           .sidebar-logo {
             height: 100px;
             max-width: 100%;
             object-fit: contain;
           }
-
           .sidebar-content {
             flex: 1;
             padding: 1rem;
@@ -96,17 +109,25 @@ export default function Sidebar() {
             transform: translateY(-2px);
           }
 
-          .sidebar-link a {
+          .sidebar-link a, .dropdown-header {
             color: hsl(224.4, 64.3%, 32.9%);
             text-decoration: none;
             font-weight: 500;
             font-size: 18px;
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
           }
 
           .sidebar-content a:hover {
             text-decoration: none;
           }
+            .sidebar-link a i {
+              width: 24px;
+              text-align: center;
+              font-size: 18px;
+              min-width: 24px;
+            }
 
           .sidebar-footer {
             font-weight: 500;
@@ -115,46 +136,59 @@ export default function Sidebar() {
           }
 
           
+          .dropdown {
+            position: relative;
+              font-size: 18px;
+               font-weight: 500;
+          }
+
           .dropbtn {
-            background: none;
+            background-color: transparent;
             border: none;
-            color: hsl(224.4, 64.3%, 32.9%);
-            font-weight: 500;
-            width: 100%;
-            text-align: left;
-            padding: 0;
+            color: #333;
+            font-size: 1rem;
+            padding: 0.75rem 1rem;
             cursor: pointer;
-            font-family: inherit;
-            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+          
+          }
+
+          .arrow-icon {
+            transition: transform 0.3s ease;
           }
 
           .dropdown-content {
             display: none;
+            flex-direction: column;
             position: absolute;
-            left: 1rem;
+            right: 10%;
             top: 100%;
-            background-color: #FFF;
-            box-shadow: 0 0 10px rgba(0, 102, 204, 0.15);
-            z-index: 10;
-            width: 90%;
-            border-radius: 6px;
-            margin-top: 0.25rem;
+            background-color: inherit;
+            min-width: 160px;
+            z-index: 1;
           }
 
           .dropdown-content a {
-            display: block;
-            padding: 0.5rem 1rem;
+          margin-top: 15px;
+            color: inherit;
+            padding: 5px 16px;
             text-decoration: none;
-            color: hsl(224.4, 64.3%, 32.9%);
-            border-radius: 4px;
+            display: block;
           }
 
           .dropdown-content a:hover {
-            background-color: #f0f4ff;
+             box-shadow: 0 0 10px rgba(0, 102, 204, 0.6);
+            transform: translateY(-2px);
+             border-radius: 6px;
           }
-
           .dropdown:hover .dropdown-content {
-            display: block;
+            display: flex;
+          }
+          .dropdown:hover .arrow-icon {
+            transform: rotate(90deg);
           }
         `}
       </style>

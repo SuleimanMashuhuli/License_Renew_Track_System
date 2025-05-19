@@ -65,7 +65,19 @@ from .models import Subscriptions, User, Notification
 from .serializers import SubscriptionsSerializer, UserSerializer, NotificationSerializer
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-
+from django.core.cache import cache
+from rest_framework import status
+from rest_framework.status import HTTP_200_OK
+from django.conf import settings
+import random
+import jwt
+import datetime
+from rest_framework.response import Response
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.decorators import api_view
+from rest_framework.status import HTTP_200_OK
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # def extract_text_from_pdf(pdf_file):
 #     """Extract text from a PDF file (OCR for images)."""
@@ -697,9 +709,11 @@ def list_user(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_current_user(request):
-
-    serializer = UserSerializer(request.user)
-    return Response(serializer.data)
+    if request.user.is_authenticated:
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+    else:
+        return Response({"detail": "Not authenticated"}, status=401)
 
 
 @api_view(['GET'])
@@ -948,8 +962,20 @@ def renew_subscriptions(request, id):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+def generate_otp_token(user, otp):
+    payload = {
+        "username": user.username,
+        "email": user.email,
+        "otp": otp,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
+        "iat": datetime.datetime.utcnow(),
+        "jti": str(uuid.uuid4())  
+    }
+    token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+    return token
+
 class SignInView(APIView):
-    def post(self, request):
+   def post(self, request):
         username_or_email = request.data.get('username')
         password = request.data.get('password')
 
@@ -968,21 +994,14 @@ class SignInView(APIView):
                 return Response({
                     'message': 'Password not set. Please create a password.',
                     'user_id': user.id,
-                    'redirect': 'set-password' 
+                    'redirect': 'set-password'
                 }, status=200)
 
             if user.check_password(password):
                 print("Password is correct")
 
                 otp = random.randint(100000, 999999)
-                otp_session = str(uuid.uuid4())
-
-        
-                cache.set(otp_session, {
-                    "username": user.username,
-                    "email": user.email,
-                    "otp": otp
-                }, timeout=300)
+                otp_token = generate_otp_token(user, otp)
 
                 send_mail(
                     subject="Your OTP Code",
@@ -994,8 +1013,7 @@ class SignInView(APIView):
 
                 return Response({
                     'message': 'OTP sent to your email',
-
-                    'otp_session': otp_session
+                    'otp_token': otp_token
                 }, status=HTTP_200_OK)
             else:
                 print("Password is incorrect")
@@ -1029,75 +1047,78 @@ def set_user_password(request):
 
 class VerifyOTPView(APIView):
     def post(self, request):
-        otp_session = request.data.get("otp_session")
+        otp_token = request.data.get("otp_token")
         input_otp = request.data.get("otp")
 
-        if not otp_session or not input_otp:
-            raise ValidationError("OTP session and OTP code are required.")
-
-        cached_data = cache.get(otp_session)
-
-        if not cached_data:
-            raise ValidationError("OTP session expired or invalid.")
+        if not otp_token or not input_otp:
+            raise ValidationError("OTP token and OTP code are required.")
 
         try:
-            if str(cached_data["otp"]) != str(input_otp):
-                raise AuthenticationFailed("Invalid OTP")
+            payload = jwt.decode(otp_token, settings.SECRET_KEY, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed("OTP token expired.")
+        except jwt.InvalidTokenError:
+            raise AuthenticationFailed("Invalid OTP token.")
 
-            username = cached_data["username"]
+        if str(payload.get("otp")) != str(input_otp):
+            raise AuthenticationFailed("Invalid OTP")
+
+        username = payload.get("username")
+        try:
             user = get_user_model().objects.get(username=username)
-
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-
-            cache.delete(otp_session)
-
-            return Response({
-                "message": "OTP verified successfully",
-                "access_token": access_token,
-                "refresh_token": str(refresh),
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                }
-            }, status=HTTP_200_OK)
-
         except get_user_model().DoesNotExist:
             raise AuthenticationFailed("User not found")
 
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        return Response({
+            "message": "OTP verified successfully",
+            "access_token": access_token,
+            "refresh_token": str(refresh),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+            }
+        }, status=HTTP_200_OK)
 
 
 class ResendOTPView(APIView):
     def post(self, request):
-        otp_session = request.data.get("otp_session")
+        otp_token = request.data.get("otp_token")
 
-        if not otp_session:
-            raise ValidationError("OTP session is required.")
+        if not otp_token:
+            raise ValidationError("OTP token is required.")
 
-        cached_data = cache.get(otp_session)
+        try:
+            payload = jwt.decode(otp_token, settings.SECRET_KEY, algorithms=["HS256"], options={"verify_exp": False})
+        except jwt.InvalidTokenError:
+            raise ValidationError("Invalid OTP token.")
 
-        if not cached_data:
-            raise ValidationError("OTP session expired or invalid.")
+        user_username = payload.get("username")
+        user_email = payload.get("email")
+
+        try:
+            user = get_user_model().objects.get(username=user_username)
+        except get_user_model().DoesNotExist:
+            raise ValidationError("User not found.")
 
         new_otp = random.randint(100000, 999999)
-
-        cached_data["otp"] = new_otp
-        cache.set(otp_session, cached_data, timeout=300)
+        new_otp_token = generate_otp_token(user, new_otp)
 
         send_mail(
             subject="Your New OTP Code",
             message=f"Your new OTP code is: {new_otp}",
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[cached_data["email"]],
+            recipient_list=[user_email],
             fail_silently=False,
         )
 
         return Response({
-            "message": "New OTP has been sent to your email"
+            "message": "New OTP has been sent to your email",
+            "otp_token": new_otp_token
         }, status=HTTP_200_OK)
-
-
 
 
 class SignUpView(APIView):
@@ -1111,19 +1132,20 @@ class SignUpView(APIView):
             data = json.loads(request.body.decode('utf-8'))
             print("Received Data:", data) 
            
-            required_fields = ["username", "password", "first_name", "middle_name", "last_name", "email"]
+            required_fields = ["username", "password", "first_name", "last_name", "email"]
             for field in required_fields:
                 if field not in data or not data[field]:
                     return JsonResponse({"error": f"{field} is required"}, status=400)
 
 
-            user = Users(
+            user = User(
                 username=data["username"],
                 first_name=data["first_name"],
                 last_name=data["last_name"],
-                mobiNumber=data.get("mobi_number"),
+                mobiNumber=data.get("phone_number"),
                 email=data["email"]
             )
+                
             user.set_password(data["password"]) 
             user.save()
 
@@ -1135,8 +1157,9 @@ class SignUpView(APIView):
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
        
         except Exception as e:   
-
             print(f"Error: {str(e)}")
+            return JsonResponse({"error": "An unexpected error occurred", "details": str(e)}, status=500)
+
 
 class ForgotPasswordView(APIView):
     def post(self, request):

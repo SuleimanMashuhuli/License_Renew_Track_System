@@ -43,7 +43,8 @@ const Login = () => {
           navigate("/set-password", { state: { userId: data.user_id } });
         } else {
           
-          setOtpSession(data.otp_session);
+          localStorage.setItem("otp_token", data.otp_token);
+          setOtpSession(data.otp_token); 
         }
       } else {
         setError(data?.message || "Invalid credentials");
@@ -79,21 +80,31 @@ const Login = () => {
       return;
     }
 
+    const otpToken = localStorage.getItem("otp_token");
+    if (!otpToken) {
+      setError("OTP token is missing. Please log in again.");
+      return;
+    }
+
     try {
-      const res = await fetch("http://127.0.0.1:8000/user/verify_otp/", {
+      console.log("Sending OTP session:", otpSession);
+      console.log("Sending OTP code:", otpCode);
+
+      const res = await fetch("http://127.0.0.1:8000/api/user/verify_otp/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          otp_session: otpSession,
-          otp_code: otpCode,
+          otp_token: otpSession,
+          otp: otpCode.toString(),
         }),
       });
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem("token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh);
+        localStorage.setItem("refresh_token", data.refresh_token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/home");
+        localStorage.removeItem("otp_token"); 
+        navigate("/layout");
       } else {
         setError(data.message || "Invalid OTP");
       }
@@ -105,15 +116,17 @@ const Login = () => {
   const handleResend = async () => {
     setError("");
     try {
-      const res = await fetch("http://127.0.0.1:8000/user/resend_otp/", {
+      const res = await fetch("http://127.0.0.1:8000/api/user/resend_otp/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp_session: otpSession }),
+        body: JSON.stringify({ otp_token: otpSession }),
       });
 
       const data = await res.json();
       if (res.ok) {
+        console.log("OTP resent:", data.message);
         alert("A new OTP has been sent to your email.");
+        setOtpSession(data.otp_token); 
       } else {
         setError(data.message || "Unable to resend OTP.");
       }
@@ -187,7 +200,7 @@ const Login = () => {
             <h2 className="form-title">Enter the OTP we emailed you</h2>
             {error && <p className="error">{error}</p>}
             <div className="otp-inputs">
-              {otp.map((digit, index) => (
+              {otp.slice(0, 3).map((digit, index) => (
                 <input
                   key={index}
                   id={`otp-input-${index}`}
@@ -199,7 +212,21 @@ const Login = () => {
                   aria-label={`OTP digit ${index + 1}`}
                 />
               ))}
+              <span className="otp-hyphen">-</span>
+              {otp.slice(3).map((digit, index) => (
+                <input
+                  key={index + 3}
+                  id={`otp-input-${index + 3}`}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleInputChange(index + 3, e.target.value)}
+                  className="otp-slot"
+                  aria-label={`OTP digit ${index + 4}`}
+                />
+              ))}
             </div>
+
             <div className="button-row">
               <button type="submit" className="verify-btn" disabled={otp.join("").length !== 6}>
                 Verify
@@ -383,6 +410,79 @@ const Login = () => {
   font-size: 14px;
   
 }
+  .otp-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.otp-slot {
+  width: 36px;
+  height: 36px;
+  font-size: 24px;
+  text-align: center;
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  outline-offset: 2px;
+  transition: border-color 0.2s ease;
+}
+
+.otp-slot:focus {
+  border-color: hsl(224, 70%, 50%);
+  box-shadow: 0 0 5px hsl(224, 70%, 70%);
+}
+
+.otp-hyphen {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0 8px;
+  user-select: none;
+}
+
+
+.button-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.verify-btn,
+.resend-btn {
+  width: 100%;
+  padding: 10px 0;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.verify-btn {
+  background-color: hsl(224, 64%, 33%);
+  color: white;
+}
+
+.verify-btn:disabled {
+  background-color: #a5b4fc;
+  cursor: not-allowed;
+}
+
+.verify-btn:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.resend-btn {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.resend-btn:hover {
+  background-color: #d1d5db;
+}
+
 
 @media (max-width: 768px) {
   .signin-box {

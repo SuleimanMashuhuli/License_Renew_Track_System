@@ -39,7 +39,10 @@ class User(AbstractUser):
     def set_password(self, raw_password):
         super().set_password(raw_password)
         self.password_set = True
-        self.save(update_fields=["password", "password_set"])
+    
+        if self.pk:
+            self.save(update_fields=["password", "password_set"])
+
 
     def check_password(self, raw_password):
       

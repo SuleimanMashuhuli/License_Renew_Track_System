@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '../components/Table.jsx';
+import React, { useState, useEffect, useMemo } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/Table.jsx';
 
 export default function UserManagement() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -19,18 +19,32 @@ export default function UserManagement() {
     fetchSubscriptions();
   }, []);
 
-  const uniqueOwners = Array.from(
-    new Map(
-      subscriptions.map(sub => [sub.owner_email, sub])
-    ).values()
-  );
+  const ownerSubscriptionsMap = useMemo(() => {
+    const map = {};
+    subscriptions.forEach((sub) => {
+      const email = sub.owner_email.toLowerCase();
+      if (!map[email]) map[email] = [];
+      map[email].push(sub);
+    });
+    return map;
+  }, [subscriptions]);
+
+  const uniqueOwners = useMemo(() => {
+    const ownerMap = new Map();
+    subscriptions.forEach((sub) => {
+      if (!ownerMap.has(sub.owner_email)) {
+        ownerMap.set(sub.owner_email, sub);
+      }
+    });
+    return Array.from(ownerMap.values());
+  }, [subscriptions]);
 
   const handleOwnerClick = (email) => {
     setSelectedOwnerEmail(email);
-    const ownerSubs = subscriptions.filter(sub => sub.owner_email === email);
-    setSelectedOwnerSubscriptions(ownerSubs);
+    setSelectedOwnerSubscriptions(ownerSubscriptionsMap[email.toLowerCase()] || []);
   };
 
+  
   return (
     <div className="employees-page">
       <h1></h1>
@@ -70,12 +84,8 @@ export default function UserManagement() {
                   <TableCell>{owner.owner_email}</TableCell>
                   <TableCell>{owner.owner_department}</TableCell>
                   <TableCell>
-                    { 
-                      subscriptions.filter(
-                        (sub) => sub.owner_email.toLowerCase() === owner.owner_email.toLowerCase()
-                      ).length
-                    }
-                  </TableCell>
+                      {ownerSubscriptionsMap[owner.owner_email.toLowerCase()]?.length || 0}
+                    </TableCell>
                 </TableRow>
               ))}
             </TableBody>

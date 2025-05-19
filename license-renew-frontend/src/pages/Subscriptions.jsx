@@ -7,50 +7,45 @@ const ActionMenu = ({ sub, index, openModal, handleDelete }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div style={{ position: 'relative' }}>
-      <span onClick={() => setIsOpen(!isOpen)} className="action-trigger">
-        &#x22EF;
-      </span>
-
-      {isOpen && (
-        <div className="mini-modal" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => {
-              openModal(sub, index);
-              setIsOpen(false);
-            }}
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => {
-              handleDelete(index);
-              setIsOpen(false);
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      )}
+    <div className="icon-buttons">
+      <button
+        onClick={() => openModal(sub, index)}
+        className="icon-button edit"
+        title="Edit"
+      >
+        <i className="fas fa-pencil-alt"></i>
+      </button>
+      <button
+        onClick={() => handleDelete(index)}
+        className="icon-button delete"
+        title="Delete"
+      >
+        <i className="fas fa-trash-alt"></i>
+      </button>
 
       <style>{`
 
-        .action-trigger {
-          display: inline-block;
-          font-size: 16px;
-          padding: 4px;
-          line-height: 1;
-          border-radius: 50%;
+         .icon-buttons {
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+        }
+
+        .icon-button {
+          border: none;
+          background: none;
           cursor: pointer;
-          transition: background 0.2s ease-in-out;
-          text-decoration: none !important; 
-          color: inherit;
+          font-size: 14px;
+          padding: 4px;
+          transition: transform 0.2s ease;
         }
 
-
-        .action-trigger:hover {
-          background-color: #eaeaea;
+        .icon-button.edit {
+          color: #f0ad4e; 
         }
+
+        .icon-button.delete {
+          color: #d9534f;
 
         .mini-modal {
           margin-left: 20px;

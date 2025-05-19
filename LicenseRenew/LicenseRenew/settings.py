@@ -154,7 +154,6 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
     ],
-
 }
 
 SIMPLE_JWT = {
@@ -206,12 +205,6 @@ DEFAULT_FROM_EMAIL = 'alisuleimann4@gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL: False
 
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-    ),
-}
-
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -219,6 +212,13 @@ CHANNEL_LAYERS = {
             "hosts": [('127.0.0.1', 587)],
         },
     },
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": "127.0.0.1:11211",
+    }
 }
 
 
