@@ -9,7 +9,13 @@ export default function UserManagement() {
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/subscriptions/');
+        const token = sessionStorage.getItem("token");
+        const response = await fetch('http://127.0.0.1:8000/api/subscriptions/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
         const data = await response.json();
         setSubscriptions(data);
       } catch (error) {

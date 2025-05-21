@@ -9,7 +9,7 @@ export default function Header() {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -19,7 +19,7 @@ export default function Header() {
       }
 
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/users/me/", {
+        const response = await axios.get("http://127.0.0.1:8000/api/me/", {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -99,7 +99,7 @@ export default function Header() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     navigate("/sign_in");
   };
 
@@ -195,6 +195,7 @@ export default function Header() {
             background-color: white;
             height: 72px;
             box-sizing: border-box;
+            
           }
 
           .search-input {

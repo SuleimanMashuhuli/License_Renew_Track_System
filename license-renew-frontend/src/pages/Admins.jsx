@@ -9,6 +9,93 @@ import {
   TableRow,
 } from '../components/Table.jsx';
 
+
+
+const ActionMenu = ({ sub, handleEditAdmin, handleDeleteAdmin }) => {
+
+  return (
+    <div className="icon-buttons">
+      <button
+        onClick={() => handleEditAdmin(sub)}
+        className="icon-button edit"
+        title="Edit"
+      >
+        <i className="fas fa-pencil-alt"></i>
+      </button>
+      <button
+        onClick={() => handleDeleteAdmin(sub.id)}
+        className="icon-button delete"
+        title="Delete"
+      >
+        <i className="fas fa-trash-alt"></i>
+      </button>
+
+      <style>{`
+
+         .icon-buttons {
+          display: flex;
+          gap: 10px;
+          justify-content: start;
+        }
+
+        .icon-button {
+          border: none;
+          background: none;
+          cursor: pointer;
+          font-size: 14px;
+          padding: 4px;
+          align-items: start;
+          transition: transform 0.2s ease;
+        }
+
+        .icon-button.edit {
+          color: #f0ad4e; 
+        }
+
+        .icon-button.delete {
+          color: #d9534f;
+
+        .mini-modal {
+          margin-left: 20px;
+          position: absolute;
+          bottom: 0; 
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          padding: 5px 8px;
+          border-radius: 6px;
+          width: 60px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .mini-modal button {
+          padding: 4px 6px;
+          font-size: 12px;
+          border: none;
+          background-color: #f0f0f0;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.3s;
+        }
+
+        .mini-modal button:hover {
+          background-color: #e0e0e0;
+        }
+
+        .mini-modal button:last-child {
+          color: red;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+
+
 export default function Admins () {
   const [admins, setAdmins] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -18,7 +105,7 @@ export default function Admins () {
     first_name: '',
     last_name: '',
     email: '',
-    username: '',
+    mobiNumber: '',
     password: ''
   });
 
@@ -27,10 +114,17 @@ export default function Admins () {
   }, []);
 
   const fetchAdmins = () => {
-    axios.get('http://127.0.0.1:8000/api/admins/')
-      .then(response => setAdmins(response.data))
-      .catch(error => console.error("Error fetching admins", error));
+    const token = sessionStorage.getItem('token'); 
+  
+    axios.get('http://127.0.0.1:8000/api/users/', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .then(response => setAdmins(response.data))
+    .catch(error => console.error("Error fetching admins", error));
   };
+  
 
   const openModal = (admins = null, index = null) => {
     if (admins) {
@@ -41,7 +135,7 @@ export default function Admins () {
         first_name: '',
         last_name: '',
         email: '',
-        username: '',
+        mobiNumber: '',
         password: ''
       });
       setIsEditing(null);
@@ -56,12 +150,18 @@ export default function Admins () {
   };
 
   const handleSubmit = () => {
-    if (!formData.username || !formData.password || !formData.first_name || !formData.last_name|| !formData.email) {
+    if (!formData.mobiNumber || !formData.first_name || !formData.last_name|| !formData.email) {
       alert('Please fill in all fields.');
       return;
     }
 
-    axios.post('http://127.0.0.1:8000/api/admins/create/', formData)
+    const token = sessionStorage.getItem('token'); 
+
+    axios.post('http://127.0.0.1:8000/api/admin/create/', formData,  {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
       .then(response => {
         setAdmins([...admins, response.data]);
         resetForm();
@@ -76,13 +176,20 @@ export default function Admins () {
       first_name: admin.first_name,
       last_name: admin.last_name,
       email: admin.email,
-      username: admin.username,
+      mobiNumber: admin.mobiNumber,
       password: ''
     });
   };
 
   const handleSubmitEdit = () => {
-    axios.put(`http://127.0.0.1:8000/api/admins/${currentAdmin.id}/`, formData)
+
+    const token = sessionStorage.getItem('token'); 
+
+    axios.put(`http://127.0.0.1:8000/api/users/${currentAdmin.id}/update/`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
       .then(response => {
         setAdmins(admins.map(admin => admin.id === currentAdmin.id ? response.data : admin));
         resetForm();
@@ -92,7 +199,14 @@ export default function Admins () {
   };
 
   const handleDeleteAdmin = (adminId) => {
-    axios.delete(`http://127.0.0.1:8000/api/admins/${adminId}/`)
+
+    const token = sessionStorage.getItem('token'); 
+
+    axios.delete(`http://127.0.0.1:8000/api/users/${adminId}/delete/`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
       .then(() => {
         setAdmins(admins.filter(admin => admin.id !== adminId));
       })
@@ -104,7 +218,7 @@ export default function Admins () {
       first_name: '',
       last_name: '',
       email: '',
-      username: '',
+      mobiNumber: '',
       password: ''
     });
     setIsEditing(false);
@@ -124,12 +238,15 @@ export default function Admins () {
         <div className="modal-overlay">
           <div className="modal">
             <h2>{isEditing !== null ? 'Edit' : 'Add'} Subscription</h2>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                isEditing !== null ? handleSubmitEdit() : handleSubmit();
+              }}>
               <input name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleChange} required />
               <input name="last_name" placeholder="Surname Name" value={formData.last_name} onChange={handleChange} required />
-              <input name="email" placeholder="Issuing Authority" value={formData.email} onChange={handleChange} required />
-              <input type="mobiNumber" name="expiry" value={formData.mobiNumber} onChange={handleChange} required />
-              <input name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+              <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+              <input name="mobiNumber" placeholder="Phone Number" value={formData.mobiNumber} onChange={handleChange} required />
+              <input name="password" placeholder="Password" value={formData.password} onChange={handleChange}  />
               <div className="modal-actions">
                 <button type="submit">{isEditing !== null ? 'Update' : 'Save'}</button>
                 <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
@@ -147,6 +264,7 @@ export default function Admins () {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>MObile</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Action</TableHead> 
                 </TableRow>
             </TableHeader>
@@ -156,15 +274,11 @@ export default function Admins () {
                     <TableCell>{admins.first_name} {admins.last_name}</TableCell>
                     <TableCell>{admins.email}</TableCell>
                     <TableCell>{admins.mobiNumber}</TableCell>
+                    <TableCell>{admins.userRole}</TableCell>
                     <TableCell>
-                    <div className="card-actions">
-                        <button onClick={() => openModal(admins, index)} className="btn-edit">
-                        Edit
-                        </button>
-                        <button onClick={() => handleDeleteAdmin(index)} className="btn-delete">
-                        Delete
-                        </button>
-                    </div>
+                      <ActionMenu sub={admins} handleEditAdmin={(admin) => { handleEditAdmin(admin); 
+                      setShowModal(true);
+                      }} handleDeleteAdmin={handleDeleteAdmin} />
                     </TableCell>
                 </TableRow>
                 ))}
@@ -176,7 +290,7 @@ export default function Admins () {
         .admins-page {
         background: white;
         padding: 24px;
-        border-radius: 8px;
+        // border-radius: 8px;
         // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
 
@@ -291,8 +405,8 @@ export default function Admins () {
         }
         
         .table-container {
-          border: 1px solid #e0e0e0;
-          border-radius: 10px;
+          border: px solid #111111;
+       
           overflow: hidden;
         }
 
@@ -306,8 +420,8 @@ export default function Admins () {
 
         th,
         td {
-          padding: 12px 15px;
-          border: 0px solid #e0e0e0;
+          padding: 8px 15px;
+          border-bottom: 1px solid black;
         }
 
         th {
@@ -324,11 +438,11 @@ export default function Admins () {
         }
 
         tbody tr:nth-child(even) {
-          background-color: #f9f9f9;
+          background-color: #fff;
         }
 
         tbody tr:hover {
-          background-color: #f1f1f1;
+          background-color: #fff;
         }
 
         caption {

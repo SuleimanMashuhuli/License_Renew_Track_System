@@ -4,7 +4,7 @@ export default function Sidebar() {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <img src="/logO1.png" alt="Logo" className="sidebar-logo" />
+        <img src="/ABC1.png" alt="Logo" className="sidebar-logo" />
       </div>
 
       <hr />
@@ -67,7 +67,7 @@ export default function Sidebar() {
             padding: 1rem;
           }
 
-          .sidebar-header {
+          .sidebar-header { 
             position: relative; 
             display: flex;
             justify-content: center;
@@ -86,13 +86,14 @@ export default function Sidebar() {
             border-bottom: 1px solid hsl(226.2 57% 21%);
           }
           .sidebar-logo {
-            height: 100px;
+            height: 70px;
             max-width: 100%;
             object-fit: contain;
           }
           .sidebar-content {
             flex: 1;
             padding: 1rem;
+            
           }
 
           .sidebar-link {

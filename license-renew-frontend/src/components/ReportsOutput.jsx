@@ -9,14 +9,26 @@ const ReportsOutput = () => {
   const [subscriptionData, setSubscriptionData] = useState([]);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/full-report/")
-      .then(res => res.json())
-      .then(data => {
+    const token = sessionStorage.getItem("token");
+  
+    fetch("http://127.0.0.1:8000/api/full-report/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
         setSubscriptions(data.metrics || {});
         setSubscriptionData(data.list || []);
       })
-      .catch(error => console.error("Error fetching subscription data:", error));
+      .catch((error) => console.error("Error fetching subscription data:", error));
   }, []);
+  
 
   const pieChartData = Object.entries(
     subscriptionData.reduce((acc, curr) => {

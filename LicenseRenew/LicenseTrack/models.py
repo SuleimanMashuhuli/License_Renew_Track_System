@@ -1,12 +1,10 @@
 from django.db import models
 from datetime import datetime
 from datetime import date, timedelta
-from django.utils.timezone import now
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
 from django.conf import settings
 from django.core.files.base import ContentFile
 from PIL import Image, ImageDraw, ImageFont
@@ -21,6 +19,8 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save, pre_save
 from enum import Enum 
 from django.contrib.auth.hashers import make_password, check_password
+from django.utils import timezone
+from django.utils.timezone import now
 
 
 #------------VERSION2--------------#
@@ -34,7 +34,7 @@ class User(AbstractUser):
     password_set = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.username
+        return self.first_name
     
     def set_password(self, raw_password):
         super().set_password(raw_password)
@@ -93,6 +93,20 @@ class User(AbstractUser):
 
 
 
+class SubscriptionQuerySet(models.QuerySet):
+    def active(self):
+        today = timezone.now().date()
+        return self.filter(start_date__lte=today, end_date__gte=today)
+
+    def expired(self):
+        today = timezone.now().date()
+        return self.filter(end_date__lt=today)
+
+    def pending(self):
+        today = timezone.now().date()
+        return self.filter(start_date__gt=today)
+
+
 class Subscriptions(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True )
     sub_name = models.CharField(max_length=100)
@@ -109,7 +123,27 @@ class Subscriptions(models.Model):
     associated_documents = models.FileField(upload_to='Subscription/')
     is_document_uploaded = models.BooleanField(default=False)
 
+
+    objects = SubscriptionQuerySet.as_manager()
+
+
+    @property
+    def status(self):
+        today = timezone.now().date()
+        if self.expiring_date < today:
+            return 'expired'
+        elif self.issuing_date > today:
+            return 'pending'
+        else:
+            return 'active'
+
+
     def save(self, *args, **kwargs):
+        if isinstance(self.issuing_date, str):
+            self.issuing_date = datetime.strptime(self.issuing_date, "%Y-%m-%d").date()
+        if isinstance(self.expiring_date, str):
+            self.expiring_date = datetime.strptime(self.expiring_date, "%Y-%m-%d").date()
+    
         if not self.owner_first_name and not self.owner_last_name:
             if self.user:
                 self.owner_first_name = self.user.first_name
@@ -118,34 +152,18 @@ class Subscriptions(models.Model):
                 self.owner_department = self.user.profile.department if hasattr(self.user, 'profile') else ''
 
         
-        if self.associated_documents:
+        if  self.associated_documents:
             self.is_document_uploaded = True
         else:
             self.is_document_uploaded = False
 
         super(Subscriptions, self).save(*args, **kwargs)
 
-
-    def status(self, **kwargs):
-        today = date.today()
-
-        if isinstance(self.expiring_date, str):
-            try:
-                self.expiring_date = datetime.strptime(self.expiring_date, "%Y-%m-%d").date()
-            except ValueError:
-                return 'invalid'
-
-        elif isinstance(self.expiring_date, datetime):
-            self.expiring_date = self.expiring_date.date()
-
-        if self.expiring_date > today:
-            return 'active' if self.is_document_uploaded else 'pending'
-        else:
-            return 'expired'
+    
 
 
     def __str__(self):
-        return f"Subscription {self.sub_type} - Status: {self.status()}"
+        return f"Subscription {self.sub_type} - Status: {self.status}"
 
 
 
@@ -157,7 +175,7 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Notification for {self.recipient.username} - {self.created_at}"
+        return f"Notification for {self.recipient.email} - {self.created_at}"
 
     def mark_as_read(self):
         self.read = True

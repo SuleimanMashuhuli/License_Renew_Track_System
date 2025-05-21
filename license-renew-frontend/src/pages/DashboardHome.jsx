@@ -17,7 +17,7 @@ export default function DashboardHome() {
   
   const fetchDashboardStats = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
   
       const subsRes = await axios.get('http://127.0.0.1:8000/api/subscriptions/', { headers });
@@ -31,15 +31,24 @@ export default function DashboardHome() {
   
       setActiveLicenses(activeSubscriptions.length);
       setExpiredLicenses(expiredSubscriptions.length);
-  
+      
+
       const today = new Date();
       const in30Days = new Date();
       in30Days.setDate(today.getDate() + 30);
+
+      today.setHours(0, 0, 0, 0);
+      in30Days.setHours(23, 59, 59, 999);
+
+      console.log("Today:", today.toISOString());
+      console.log("30 Days From Now:", in30Days.toISOString());
   
       const expiring = subsRes.data.filter(sub => {
-        const expDate = new Date(sub.expiring_date);
+        const [year, month, day] = sub.expiring_date.split('-').map(Number);
+        const expDate = new Date(year, month - 1, day); 
         return expDate >= today && expDate <= in30Days;
       });
+      
   
       setExpiringSoon(expiring);
   

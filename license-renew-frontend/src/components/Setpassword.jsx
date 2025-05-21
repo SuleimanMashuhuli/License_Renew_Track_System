@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const SetPassword = () => {
@@ -9,19 +9,23 @@ const SetPassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const userId = location.state?.userId;
+  const id = location.state?.id;
 
-  if (!userId) {
-    navigate("/sign_in");
-  }
+  useEffect(() => {
+    if (!id) {
+      navigate("/sign_in");
+    } else {
+      console.log("userId received:", id);
+    }
+  }, [id, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    if (password.length < 15) {
-      setError("Password must be at least 15 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -34,13 +38,15 @@ const SetPassword = () => {
       const response = await fetch("http://127.0.0.1:8000/api/user/set_password/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, new_password: password }),
+        body: JSON.stringify({ user_id: id, new_password: password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setSuccess("Password set successfully! Redirecting to login...");
+        setPassword("");
+        setConfirmPassword("");
         setTimeout(() => {
           navigate("/sign_in");
         }, 2000);
@@ -64,15 +70,15 @@ const SetPassword = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          minLength={15}
+          minLength={8}
         />
         <input
           type="password"
           placeholder="Cornfirm password"
-          value={password}
+          value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
-          minLength={15}
+          minLength={8}
         />
         <button type="submit">Set Password</button>
       </form>

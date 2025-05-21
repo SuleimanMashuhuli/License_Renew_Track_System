@@ -44,7 +44,7 @@ function App() {
              
                 <Route path="/view-details/:id" element={<ViewDetails />} />
                 <Route path="/reports" element={<Reports />} />
-                <Route path="/renew/:id" element={<Renew />} />
+              
 
                 <Route path="/layout" element={<Layout />}>
                     <Route index element={<DashboardHome />} />
@@ -52,6 +52,7 @@ function App() {
                     <Route path="subscription" element={<Subscriptions />} />
                     <Route path="employees" element={<Employee />} />
                     <Route path="renewing" element={<Renewing />} />
+                    <Route path="renew/:id" element={<Renew />} />
                     <Route path="admins/manage" element={<Admins />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="admins/logs" element={<Logs />} />

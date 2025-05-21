@@ -6,7 +6,7 @@ from drf_writable_nested import WritableNestedModelSerializer
 
 #----v2----#
 from .models import User, Subscriptions, Notification, Renewing
-
+from datetime import datetime
 
 # class ProvidersSerializer(serializers.ModelSerializer):
 
@@ -102,12 +102,20 @@ from .models import User, Subscriptions, Notification, Renewing
 #------VERSION2------#
 
 class UserSerializer(serializers.ModelSerializer):
+    date_joined = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'password','username', 'first_name', 'last_name', 'email', 'mobiNumber', 'userRole']
+        fields = ['id', 'password', 'first_name', 'last_name', 'email', 'mobiNumber', 'userRole', 'date_joined']
+
+
+    def get_date_joined(self, obj):
+        
+        return obj.date_joined.date().isoformat()
 
 class SubscriptionsSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True) 
+    status = serializers.CharField(read_only=True)
     
     class Meta:
         model = Subscriptions
@@ -124,8 +132,7 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-    def get_status(self, obj):
-        return obj.status()
+    
 
 class NotificationSerializer(serializers.ModelSerializer):
     recipient = serializers.StringRelatedField()

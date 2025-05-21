@@ -9,7 +9,7 @@ const Dash = () => {
   const [filteredData, setFilteredData] = useState([]);
   const navigate = useNavigate();
   const [licenseData, setLicenseData] = useState(null);
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
 
   useEffect(() => {

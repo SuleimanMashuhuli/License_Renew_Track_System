@@ -40,10 +40,17 @@ const OTPPage = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        navigate("/home");
+        sessionStorage.setItem(
+          "auth_data",
+          JSON.stringify({
+            token: data.access_token,          
+            id: data.user.id       
+          })
+        );
+        
+        sessionStorage.setItem("refresh_token", data.refresh);
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/layout");
       } else {
         setError(data.message || "Invalid OTP");
       }

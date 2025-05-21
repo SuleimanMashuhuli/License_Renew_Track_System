@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
   });
   const [error, setError] = useState("");
@@ -29,6 +29,11 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
+    if (!formData.email) {
+      setError("Please enter your email.");
+      return;
+    }
+
     try {
       const response = await fetch("http://127.0.0.1:8000/api/user/sign_in/", {
         method: "POST",
@@ -38,12 +43,17 @@ const Login = () => {
 
       const data = await response.json();
       if (response.ok) {
+        const id = data.user_id || null;
+
         if (data.redirect === "set-password") {
-        
-          navigate("/set-password", { state: { userId: data.user_id } });
+          if (!id) {
+            setError("Missing user ID for password setup.");
+            return;
+          }
+          navigate("/set-password", { state: { id: id } });
         } else {
           
-          localStorage.setItem("otp_token", data.otp_token);
+          sessionStorage.setItem("otp_token", data.otp_token);
           setOtpSession(data.otp_token); 
         }
       } else {
@@ -80,7 +90,7 @@ const Login = () => {
       return;
     }
 
-    const otpToken = localStorage.getItem("otp_token");
+    const otpToken = sessionStorage.getItem("otp_token");
     if (!otpToken) {
       setError("OTP token is missing. Please log in again.");
       return;
@@ -100,10 +110,10 @@ const Login = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.removeItem("otp_token"); 
+        sessionStorage.setItem("token", data.access_token);
+        sessionStorage.setItem("refresh_token", data.refresh_token);
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+        sessionStorage.removeItem("otp_token"); 
         navigate("/layout");
       } else {
         setError(data.message || "Invalid OTP");
@@ -160,10 +170,10 @@ const Login = () => {
 
             <input
               type="text"
-              name="username"
-              placeholder="Email or Username"
-              value={formData.username}
+              name="email"
+              placeholder="Email"
               onChange={handleChange}
+              value={formData.email}
               required
             />
 
@@ -174,7 +184,7 @@ const Login = () => {
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
-                required
+                
               />
               <span className="show-hide-icon" onClick={togglePasswordVisibility}>
                 <i className={passwordVisible ? "fa fa-eye-slash" : "fa fa-eye"}></i>

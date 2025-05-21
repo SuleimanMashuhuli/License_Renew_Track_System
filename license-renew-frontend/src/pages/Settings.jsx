@@ -2,172 +2,274 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const ViewProfile = () => {
-  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [passwordData, setPasswordData] = useState({
-    current_password: '',
-    new_password: '',
-    confirm_password: '',
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    phone_number: '',
+    email: '',
   });
-  const [passwordMessage, setPasswordMessage] = useState('');
-  const id = localStorage.getItem("user_id");
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('token');
+    const fetchProfile = async () => {
+      const token = sessionStorage.getItem('token');
       if (!token) return;
 
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/api/users/${id}/`, {
+        const response = await axios.get('http://127.0.0.1:8000/api/profile/', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUser(response.data);
+
+        setProfile(response.data);
+        setFormData(prev => ({
+          ...prev,
+          first_name: response.data.first_name || '',
+          last_name: response.data.last_name || '',
+          phone_number: response.data.phone_number || '',
+          email: response.data.email || '',
+        }));
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error('Error fetching profile:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();
+    fetchProfile();
   }, []);
 
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      setPasswordMessage("New passwords do not match.");
-      return;
-    }
-
-    try {
-      await axios.post('http://127.0.0.1:8000/api/user/change-password/', {
-        current_password: passwordData.current_password,
-        new_password: passwordData.new_password,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setPasswordMessage('Password changed successfully!');
-      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
-    } catch (error) {
-      console.error(error);
-      setPasswordMessage('Error changing password.');
-    }
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <div>User not found.</div>;
+  const handleSave = async () => {
+    setSaving(true);
+  
+    const token = sessionStorage.getItem('token');
+    if (!token || !profile?.user?.id) return;
+  
+   
+    const {
+      first_name,
+      last_name,
+      phone_number,
+      email,
+      ...profileData
+    } = formData;
+  
+    const dataToSend = {
+      ...profileData,
+      user: {
+        first_name,
+        last_name,
+        phone_number,
+        email,
+      },
+    };
+  
+    try {
+      await axios.put(`http://127.0.0.1:8000/api/users/${profile.user.id}`, dataToSend, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const updatedProfile = await axios.get(`http://127.0.0.1:8000/api/users/${profile.user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      setProfile(updatedProfile.data);
+      setFormData({
+        first_name: updatedProfile.data.user.first_name || '',
+        last_name: updatedProfile.data.user.last_name || '',
+        phone_number: updatedProfile.data.user.phone_number || '',
+        email: updatedProfile.data.user.email || '',
+      });
+  
+      setEditing(false);
+      setMessage('Profile updated!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setMessage('Update failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+  
 
-  const imageSrc = user.profile_picture
-    ? `${user.profile_picture}?t=${new Date().getTime()}`
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.username)}&background=random&color=fff&size=128`;
+  if (loading) return <div>Loading...</div>;
+  if (!profile) return <div>Profile not found.</div>;
+
+  const user = profile.user || {};
+
 
   return (
     <div className="container">
-      <div className="left">
-        <img src={imageSrc} alt="profile" className="profile-img" />
-        <h2>{user.name}</h2>
-        <p><strong>Username:</strong> {user.username}</p>
-        <p><strong>Email:</strong> {user.email}</p>
-        <p><strong>Phone:</strong> {user.phone_number}</p>
-        <p><strong>Department:</strong> {user.department || 'N/A'}</p>
+      <div class="name">{profile.first_name} {profile.last_name}</div>
+
+      <div class="wrapper">
+
+        <aside class="profile-sidebar">
+            <img class="avatar" src="/Faceless businessman avatar_ Man in suit with blue tie.jpeg" alt="Avatar" />
+            <a href="#" class="view-full">View Full Size</a>
+
+            <div class="panel">
+                <p class="section"><strong>Contact me</strong><br/>
+                <a href="#">{profile.mobiNumber}</a><br/>
+                <a href='#'>{profile.email}</a></p>
+
+                <p class="section"><strong>Registered</strong><br/>
+                <a href='#'>{profile.date_joined}</a></p>
+
+                <p class="section"></p>
+
+                <p class="section"><strong>Role</strong><br/><a href="#">{profile.userRole}</a></p>
+            </div>
+        </aside>
+
+
+        <main class="content">
+    
+
+            <h2>About me</h2>
+            <table>
+                <tr><td>Organization</td><td>ABC Bank Ltd</td></tr>
+                <tr><td>Industry</td><td>Banking</td></tr>
+                <tr><td>Occupation</td><td>Banker</td></tr>
+                <tr><td>Location</td><td>Woodvale Grove, Westlands, Nairobi</td></tr>
+                <tr><td>Department</td><td>Logistics</td></tr>
+                <tr><td>Introduction</td><td>Our system manages all licenses of ABC Bank Institution and help to remind on renewals upon their respective due dates. With the help of ICT Department, Division of Software Development team that tried to come with this small system to help manage the renewal issues. Thank you for being so supportive! <br/><br/>Senoir Manager, Software Development<br/><a href="https://contacts.google.com/person/c8581039976862175743">Samuel Waithaka</a></td></tr>
+                <tr><td>Interests</td><td>Support</td></tr>
+                <tr><td></td><td></td></tr>
+                
+            </table>
+
+            <div class="footer">You smile I'm happy</div>
+        </main>
       </div>
 
-      <div className="right">
-        <h3>Change Password</h3>
-        <form onSubmit={handlePasswordChange}>
-          <div className="form-group">
-            <label>Current Password:</label>
-            <input
-              type="password"
-              value={passwordData.current_password}
-              onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>New Password:</label>
-            <input
-              type="password"
-              value={passwordData.new_password}
-              onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Confirm New Password:</label>
-            <input
-              type="password"
-              value={passwordData.confirm_password}
-              onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-              required
-            />
-          </div>
-          <button type="submit">Change Password</button>
-          {passwordMessage && <p className="message">{passwordMessage}</p>}
-        </form>
-      </div>
 
       <style jsx>{`
+        :root {
+        --text: #333;
+        --subtext: #777;
+        --link: #0182c4;
+        --border: #e5e5e5;
+        --profile-sidebar-bg: #f7f8f9;
+        --accent: #f57c00;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+    }
+
+        body{
+            margin:0;
+            padding:40px 20px;
+            color:var(--text);
+        }
         .container {
-          display: flex;
-          justify-content: space-between;
-          padding: 40px;
-          gap: 40px;
-          flex-wrap: nowrap;
-        }
-
-        .left, .right {
-          flex: 1;
-          min-width: 300px;
+          max-width: 1200px;
+          margin: 0 auto;
           padding: 20px;
-          border: 1px solid #ddd;
-          border-radius: 10px;
-          background: #fff;
         }
+          .wrapper{
+        max-width: 1040px;
+        margin:0 auto;
+        display:flex;
+        gap:50px;
+      }
+    .profile-sidebar{
+        width:200px;
+        flex-shrink:0;
+        text-align:center;
+    }
+    .content{
+        flex:1;
+    }
 
-        .profile-img {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          object-fit: cover;
-          margin-bottom: 15px;
-        }
+    .name{
+        font-size:18px;
+        font-weight:600;
+        color:var(--accent);
+        margin:0 0 30px;
+        text-align:left;
+    }
+    .avatar{
+        width:130px;
+        height:130px;
+        border-radius:50%;
+        object-fit:cover;
+        border:4px solid #fff;
+        box-shadow:0 0 0 1px var(--border);
+        display:block;
+        margin:0 auto 10px;
+    }
+    .view-full{
+        color:var(--link);
+        font-size:13px;
+        text-decoration:none;
+    }
+    .panel{
+        background:var(--profile-sidebar-bg);
+        border:1px solid var(--border);
+        padding:18px 0 20px;
+        margin-top:25px;
+        font-size:13px;
+        line-height:1.6;
+    }
+    .panel a{
+        color:var(--link);
+        text-decoration:none;
+    }
+    .panel .section{
+        margin:0;
+    }
 
-        h2, h3 {
-          margin-top: 0;
-        }
+    
+    h2{
+        font-size:20px;
+        margin:0 0 18px;
+        font-weight:600;
+    }
 
-        .form-group {
-          margin-bottom: 15px;
-        }
+    .blogs a{
+        color:var(--link);
+        font-size:14px;
+        text-decoration:none;
+        display:block;
+        margin-bottom:4px;
+    }
+    
+    table{
+        width:100%;
+        border-collapse:collapse;
+        font-size:13px;
+        margin-top:25px;
+    }
+    td{
+        padding:8px 12px;
+        vertical-align:top;
+        text-align: justify;
+    }
+    td:first-child{
+        width:140px;
+        background:#fafafa;
+        color:var(--subtext);
+        border-right:1px solid var(--border);
+    }
+    tr:not(:last-child) td{
+        border-bottom:1px solid var(--border);
+    }
 
-        .form-group input {
-          width: 100%;
-          padding: 8px;
-          margin-top: 5px;
-        }
-
-        button {
-          padding: 10px 20px;
-          background-color: #682773;
-          color: white;
-          border: none;
-          cursor: pointer;
-        }
-
-        .message {
-          margin-top: 10px;
-          color: green;
-        }
-
-        @media (max-width: 768px) {
-          .container {
-            flex-direction: column;
-          }
-        }
+    .footer{
+        margin:25px 0 0;
+        font-size:13px;
+        color:var(--subtext);
+    }
+  
       `}</style>
     </div>
   );

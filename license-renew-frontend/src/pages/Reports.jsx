@@ -9,23 +9,42 @@ const Reports = () => {
 
  
   useEffect(() => {
-    fetch('http://localhost:8000/api/subscriptions/') 
-      .then((response) => response.json())
-      .then((data) => {
-        setData(data);  
-        console.log("Fetched data:", data);
-        setLoading(false);  
-      })
-      .catch((error) => {
-        setError(error);  
+    const fetchData = async () => {
+      const token = sessionStorage.getItem("token");  
+      try {
+        const response = await fetch('http://localhost:8000/api/subscriptions/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+  
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+  
+        const result = await response.json();
+        setData(result);
+        console.log("Fetched data:", result);
+      } catch (err) {
+        setError(err);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+  
+    fetchData();
   }, []);
+  
 
   const handleDownload = (format) => {
+    const token = sessionStorage.getItem("token");
     const url = `http://localhost:8000/reports/generate/${format}/`;
   
-    fetch(url)
+    fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((response) => {
         if (!response.ok) throw new Error("Failed to download report");
         return response.blob();
@@ -40,6 +59,7 @@ const Reports = () => {
       })
       .catch((error) => console.error("Download error:", error));
   };
+  
   
   
   if (loading) {

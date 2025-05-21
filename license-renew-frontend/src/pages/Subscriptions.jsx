@@ -112,7 +112,13 @@ export default function Subscriptions() {
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/subscriptions/');
+        const token = sessionStorage.getItem('token');
+        const response = await axios.get('http://127.0.0.1:8000/api/subscriptions/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log('Fetched subscriptions:', response.data);
         setSubscriptions(response.data);
       } catch (error) {
         console.error('Error fetching subscriptions:', error);
@@ -120,6 +126,7 @@ export default function Subscriptions() {
     };
     fetchSubscriptions();
   }, []);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -172,16 +179,27 @@ export default function Subscriptions() {
     }
 
     try {
+
+      const token = sessionStorage.getItem('token');
+
       if (editIndex !== null) {
         const updatedSubscriptions = [...subscriptions];
         updatedSubscriptions[editIndex] = formData;
         setSubscriptions(updatedSubscriptions);
 
-        await axios.put(`http://127.0.0.1:8000/api/subscriptions/update/${subscriptions[editIndex].id}/`, formDataToSend);
+        await axios.put(`http://127.0.0.1:8000/api/subscriptions/update/${subscriptions[editIndex].id}/`, formDataToSend,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
       } else {
       
         const response = await axios.post('http://127.0.0.1:8000/api/subscriptions/create/', formDataToSend, {
           headers: {
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
           },
         });
@@ -211,7 +229,14 @@ export default function Subscriptions() {
   
   const handleDelete = async (index) => {
     try {
-      await axios.delete(`http://127.0.0.1:8000/api/subscriptions/delete/${subscriptions[index].id}/`);
+      const token = sessionStorage.getItem('token');
+
+      await axios.delete(`http://127.0.0.1:8000/api/subscriptions/delete/${subscriptions[index].id}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+    });
       const updated = [...subscriptions];
       updated.splice(index, 1);
       setSubscriptions(updated);
@@ -347,15 +372,15 @@ export default function Subscriptions() {
           </TableHeader>
           <TableBody>
             {subscriptions.map((sub, index) => (
-              <TableRow key={index}>
+              <TableRow key={sub.id || index}>
                 <TableCell>{sub.sub_name}</TableCell>
                 <TableCell>{sub.sub_type}</TableCell>
                 <TableCell>{sub.issuing_authority}</TableCell>
-                <TableCell>{new Date(sub.issuing_date).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(sub.expiring_date).toLocaleDateString()}</TableCell>
+                <TableCell>{sub.issuing_date ? new Date(sub.issuing_date).toLocaleDateString() : "N/A"}</TableCell>
+                <TableCell>{sub.expiring_date ? new Date(sub.expiring_date).toLocaleDateString() : "N/A"}</TableCell>
                 <TableCell>Ksh.{sub.amount}</TableCell>
                 <TableCell>{sub.reference}</TableCell>
-                <TableCell>{sub.user ? sub.user : "N/A"}</TableCell>
+                <TableCell>{sub.user ? `${sub.user.first_name} ${sub.user.last_name}` : "N/A"}</TableCell>
                 <TableCell>
                   <ActionMenu sub={sub} index={index} openModal={openModal} handleDelete={handleDelete} />
                 </TableCell>

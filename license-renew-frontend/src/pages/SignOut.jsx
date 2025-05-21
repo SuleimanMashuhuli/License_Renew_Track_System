@@ -4,7 +4,7 @@ const SignOut = () => {
   
 
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem("refresh_token");
+    const refreshToken = sessionStorage.getItem("refresh_token");
 
     try {
       await fetch("http://localhost:8000/api/sign_out/", {
@@ -16,9 +16,9 @@ const SignOut = () => {
       console.error("Logout failed:", error);
     }
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("refresh_token");
+    sessionStorage.removeItem("user");
     
     
     window.location.replace("/sign_in");

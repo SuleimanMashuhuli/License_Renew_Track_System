@@ -30,7 +30,7 @@ typedef struct _xmlRMutex xmlRMutex;
 typedef xmlRMutex *xmlRMutexPtr;
 
 XMLPUBFUN int
-			xmlCheckThreadLocalStorage(void);
+			xmlCheckThreadsessionStorage(void);
 
 XMLPUBFUN xmlMutexPtr
 			xmlNewMutex	(void);

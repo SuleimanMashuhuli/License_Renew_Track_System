@@ -186,12 +186,12 @@ class SeleniumTestCase(LiveServerTestCase, metaclass=SeleniumTestCaseBase):
     def dark(self):
         # Navigate to a page before executing a script.
         self.selenium.get(self.live_server_url)
-        self.selenium.execute_script("localStorage.setItem('theme', 'dark');")
+        self.selenium.execute_script("sessionStorage.setItem('theme', 'dark');")
         with self.desktop_size():
             try:
                 yield
             finally:
-                self.selenium.execute_script("localStorage.removeItem('theme');")
+                self.selenium.execute_script("sessionStorage.removeItem('theme');")
 
     def set_emulated_media(self, *, media=None, features=None):
         if self.browser not in {"chrome", "edge"}:

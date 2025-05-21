@@ -1,27 +1,39 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableCaption,
-  TableRow,
-} from '../components/Table.jsx';
 import axios from 'axios';
-
 
 export default function RenewalsPage() {
   const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/subscriptions/?status=expired')
-      .then(res => setExpiredSubscriptions(res.data))
-      .catch(err => console.error('Error fetching expired subscriptions:', err));
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      setError('User not authenticated');
+      setLoading(false);
+      return;
+    }
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    axios
+      .get('http://127.0.0.1:8000/api/subscriptions/', { headers })
+      .then((res) => {
+        const expired = res.data.filter(sub => sub.status === 'expired');
+        setExpiredSubscriptions(expired);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error fetching subscriptions:', err);
+        setError('Failed to fetch subscriptions');
+        setLoading(false);
+      });
   }, []);
 
   const handleRenewClick = (subscription) => {
@@ -30,39 +42,50 @@ export default function RenewalsPage() {
   };
 
   const handleProceed = () => {
-    navigate(`/payment/${selectedSubscription.id}`);
+    if (!selectedSubscription) return;
+    navigate(`/layout/renew/${selectedSubscription.id}`);
   };
+
+  if (loading) return <div>Loading subscriptions...</div>;
+  if (error) return <div style={{ color: 'red' }}>{error}</div>;
 
   return (
     <div className="renewals-page">
-      
-      <Table className="renewals-table">
-        <TableCaption>Subscriptions expired and need attention!!!.</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Provider</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Expired On</TableHead>
-            <TableHead>Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {expiredSubscriptions.map((sub) => (
-            <TableRow key={sub.id}>
-              <TableCell>{sub.sub_name}</TableCell>
-              <TableCell>{sub.issuing_authority}</TableCell>
-              <TableCell>{sub.owner_department}</TableCell>
-              <TableCell>{sub.expiring_date}</TableCell>
-              <TableCell>
-                <button className="renew-btn" onClick={() => handleRenewClick(sub)}>
-                  Renew
-                </button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <h2> </h2>
+      {expiredSubscriptions.length === 0 ? (
+        <p>No expired subscriptions at the moment.</p>
+      ) : (
+        <table className="renewals-table">
+          <caption>Subscriptions expired and need attention.</caption>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Provider</th>
+              <th>Department</th>
+              <th>Expired On</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expiredSubscriptions.map((sub) => (
+              <tr key={sub.id}>
+                <td>{sub.sub_name}</td>
+                <td>{sub.issuing_authority}</td>
+                <td>{sub.owner_department}</td>
+                <td>{sub.expiring_date}</td>
+                <td>
+                  <button
+                    className="renew-btn"
+                    onClick={() => handleRenewClick(sub)}
+                  >
+                    Renew
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       {showModal && selectedSubscription && (
         <div className="modal-overlay">

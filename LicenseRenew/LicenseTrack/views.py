@@ -5,9 +5,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LicenseRenew.settings')
 import re
 from io import BytesIO
 import traceback
-import random
 import sys
-from django.conf import settings
 from django.core.mail import send_mail
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.authentication import TokenAuthentication
@@ -22,7 +20,6 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from fuzzywuzzy import fuzz
 from dateutil import parser
-# from docx import Document
 from django.db import transaction
 from django.db.models import Count, Sum, Q
 from odf.opendocument import load 
@@ -40,13 +37,9 @@ from rest_framework.decorators import api_view, permission_classes,APIView, pars
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from rest_framework.parsers import MultiPartParser, FormParser
-# from .serializers import SubscriptionSerializer, SignUpSerializer, SignInSerializer, User_ProfileSerializer
-# from .models import Subscription, Providers, Users, User_Profile,OTP
-# from LicenseTrack.tasks import send_software_reminder
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import json
-from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import action
 from django.utils.timezone import now
@@ -60,8 +53,10 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from rest_framework.permissions import AllowAny
 import uuid
+
 #-----v2-----#
-from .models import Subscriptions, User, Notification
+from datetime import datetime, timedelta, date 
+from .models import Subscriptions, User, Notification, UserRole
 from .serializers import SubscriptionsSerializer, UserSerializer, NotificationSerializer
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -71,13 +66,698 @@ from rest_framework.status import HTTP_200_OK
 from django.conf import settings
 import random
 import jwt
-import datetime
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.decorators import api_view
 from rest_framework.status import HTTP_200_OK
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny
+
+
+
+#-------VERSION2-------#
+@api_view(['POST'])
+def create_admin(request):
+    if request.method == 'POST':
+
+        is_first_user = User.objects.count() == 0
+
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        mobi_number = request.data.get('mobiNumber')
+        password = request.data.get('password')
+
+        user_role = UserRole.SUPERUSER if is_first_user else request.data.get('userRole', UserRole.ADMIN)
+
+       
+        user = User(
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            mobiNumber=mobi_number,
+            userRole=user_role,
+            password_set=bool(password)
+        )
+
+        
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+
+        
+        if is_first_user:
+            user.is_superuser = True
+            user.is_staff = True
+
+        user.save()
+
+        serializer = UserSerializer(user)
+        return Response({
+            "message": f"{'Superuser' if is_first_user else 'Admin'} created successfully.",
+            "user": serializer.data
+        })
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+@api_view(['GET'])
+def list_all_users(request):
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    print("Authenticated user:", request.user)
+    if request.user.is_authenticated:
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+    else:
+        return Response({"detail": "Not authenticated"}, status=401)
+
+
+@api_view(['GET'])
+def get_user(request, id):
+    try:
+        admin_obj = User.objects.get(id=id)
+        serializer = UserSerializer(admin_obj)
+        return Response(serializer.data)
+    except User.DoesNotExist:
+        return Response({"error": "This user is not found"}, status=404)
+
+@api_view(['DELETE'])
+def delete_user(request, id):
+    try:
+        admin_obj = User.objects.get(id=id)
+        admin_obj.delete()
+        return Response({"message": "user deleted successfully"}, status=204)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+
+class UserUpdateView(APIView):
+    def put(self, request, id):
+        try:
+            admin = User.objects.get(id=id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UserSerializer(admin, data=request.data, partial=True)
+
+        if serializer.is_valid():
+          
+            serializer.save()
+       
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_subscription(request):
+
+
+    if request.method == 'POST': 
+        try:
+            user = request.user if request.user.is_authenticated else None
+
+            issuing_date_str = request.data.get('issuing_date')
+            expiring_date_str = request.data.get('expiring_date')
+
+
+            issuing_date = datetime.strptime(issuing_date_str, "%Y-%m-%d").date()
+            expiring_date = datetime.strptime(expiring_date_str, "%Y-%m-%d").date()
+
+            associated_documents = request.FILES.get('associated_documents', None)
+
+            subscription = Subscriptions(
+                user=user, 
+                sub_name=request.data.get('sub_name'),
+                sub_type=request.data.get('sub_type'),
+                issuing_authority=request.data.get('issuing_authority'),
+                issuing_date=issuing_date,
+                expiring_date=expiring_date,
+                amount=request.data.get('amount'),
+                reference=request.data.get('reference'),
+                owner_first_name=request.data.get('owner_first_name'),
+                owner_last_name=request.data.get('owner_last_name'),
+                owner_email=request.data.get('owner_email'),
+                owner_department=request.data.get('owner_department'),
+                associated_documents=associated_documents,
+            )
+           
+            subscription.save()
+        
+            return Response({"message": "Subscription created successfully!"}, status=201)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubscriptionsViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Subscriptions.objects.all().select_related('user') 
+    serializer_class = SubscriptionsSerializer
+   
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    
+    filterset_fields = ['sub_type', 'owner_email', 'expiring_date']
+    search_fields = ['sub_type', 'owner_first_name', 'owner_last_name']
+
+    def get_queryset(self):
+        print("HEADERS:", self.request.headers)
+
+        status = self.request.query_params.get('status')
+        if status == 'active':
+            return Subscriptions.objects.active()
+        elif status == 'expired':
+            return Subscriptions.objects.expired()
+        elif status == 'pending':
+            return Subscriptions.objects.pending()
+        return Subscriptions.objects.all()
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_subscriptions(request):
+    licenses = Subscriptions.objects.all()
+    serializer = SubscriptionsSerializer(licenses, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_subscriptions(request, id):
+    try:
+        license_obj = Subscriptions.objects.get(id=id)
+        serializer = SubscriptionsSerializer(license_obj)
+        return Response(serializer.data)
+    except Subscriptions.DoesNotExist:
+        return Response({"error": "This subscription not found"}, status=404)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_subscriptions(request, id):
+    try:
+        license_obj = Subscriptions.objects.get(id=id)
+        license_obj.delete()
+        return Response({"message": "subscription deleted successfully"}, status=204)
+    except Subscriptions.DoesNotExist:
+        return Response({"error": "subscription not found"}, status=404)
+      
+
+
+class SubscriptionsUpdateView(APIView):
+    def put(self, request, id):
+        try:
+            license = Subscriptions.objects.get(id=id)
+        except Subscriptions.DoesNotExist:
+            return Response({'error': 'SUbscriprion not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SubscriptionsSerializer(license, data=request.data, partial=True)
+
+        if serializer.is_valid():
+          
+            serializer.save()
+       
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+def trigger_email(request):
+
+    try:
+        send_subscription_reminder.delay()
+        return Response({"message": "Email Notification triggered!"}, status=200)
+
+    except Exception as e:
+
+        return Response({"error": str(e)}, status=500)
+
+def create_subscription_expiry_notification(request, subscription_id):
+    subscription = get_object_or_404(Subscriptions, id=subscription_id)
+
+    try:
+        exp_date = subscription.expiring_date
+        if isinstance(exp_date, str):
+            exp_date = datetime.strptime(exp_date, "%Y-%m-%d").date() 
+
+        if exp_date <= date.today() + timedelta(days=7):
+            admins = User.objects.filter(userRole='admin')
+            employees_with_subscription = Employees.objects.filter(assigned_subscriptions=subscription)
+
+            for employee in employees_with_subscription:
+                admin_msg = f"{employee.firstName} {employee.lastName}'s subscription for {subscription.sub_type} is expiring on {exp_date}."
+                for admin in admins:
+                    Notification.objects.create(recipient=admin, message=admin_msg)
+
+            return JsonResponse({"message": "Notifications created for employee(s) and admin(s)."})
+        else:
+            return JsonResponse({"message": "No notifications needed. Subscription is not expiring soon."})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+
+def mark_notification_as_read(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id)
+    notification.mark_as_read()
+    
+    return JsonResponse({"message": "Notification marked as read"})
+
+@api_view(['GET'])
+def get_notifications(request):
+    permission_classes = [IsAuthenticated] 
+
+
+    user = request.user
+    if user.is_staff:  
+        notifications = Notification.objects.all()
+    else:
+        notifications = Notification.objects.filter(recipient=user)
+    
+    notifications_data = [
+        {
+            'id': notification.id,
+            'message': notification.message,
+            'created_at': notification.created_at,
+            'read': notification.read,
+        }
+        for notification in notifications
+    ]
+    
+    return JsonResponse({"notifications": notifications_data})
+
+
+def get_unread_notifications(request):
+    user = request.user
+    if user.is_staff:  
+        notifications = Notification.objects.filter(read=False)
+    else:
+        notifications = Notification.objects.filter(recipient=user, read=False)
+    
+    notifications_data = [
+        {
+            'id': notification.id,
+            'message': notification.message,
+            'created_at': notification.created_at,
+            'read': notification.read,
+        }
+        for notification in notifications
+    ]
+    
+    return JsonResponse({"unread_notifications": notifications_data})
+
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser])
+def renew_subscriptions(request, id):
+    license = Subscriptions.objects.get(id=id)
+
+    new_expiry = request.data.get('new_expiry_date')
+    sub_type = request.data.get('sub_type')
+    issuing_authority = request.data.get('issuing_authority')
+    notes = request.data.get('notes')
+    renewal_document = request.FILES.get('renewal_document')
+
+    try:
+        license.expiring_date = new_expiry
+        license.status = 'active'
+        license.sub_type = sub_type
+        license.issuing_authority = issuing_authority
+        license.notes = notes
+        if renewal_document:
+            license.renewal_document = renewal_document  
+        license.save()
+        return Response({"message": "Subscription renewed."})
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def generate_otp_token(user, otp):
+    payload = {
+        "email": user.email,
+        "otp": otp,
+        "exp": datetime.utcnow() + timedelta(minutes=5),
+        "iat": datetime.utcnow(),
+        "jti": str(uuid.uuid4())  
+    }
+    token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+    return token
+
+class SignInView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        print(f"Attempting to authenticate user: {email}")
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        try:
+            if not re.match(email_pattern, email):
+                raise AuthenticationFailed('Invalid email format')
+
+            user = get_user_model().objects.get(email=email)
+            print(f"User found: {user}")
+
+            if not getattr(user, 'password_set', False):
+                return Response({
+                    'message': 'Password not set. Please create a password.',
+                    'user_id': user.id,
+                    'redirect': 'set-password'
+                }, status=200)
+
+            if user.check_password(password):
+                print("Password is correct")
+
+                otp = random.randint(100000, 999999)
+                otp_token = generate_otp_token(user, otp)
+
+                send_mail(
+                    subject="Your OTP Code",
+                    message=f"Your OTP code is: {otp}",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+
+                return Response({
+                    'message': 'OTP sent to your email',
+                    'otp_token': otp_token
+                }, status=HTTP_200_OK)
+            else:
+                print("Password is incorrect")
+                raise AuthenticationFailed('Invalid credentials')
+
+        except get_user_model().DoesNotExist:
+            print(f"User with email {email} does not exist")
+            raise AuthenticationFailed('User does not exist')
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def set_user_password(request):
+    print("Incoming data:", request.data)
+
+    user_id = request.data.get('user_id')
+    new_password = request.data.get('new_password')
+
+    if not user_id or not new_password:
+        return Response({'error': 'user_id and new_password are required'}, status=400)
+
+
+    try:
+        user = get_user_model().objects.get(id=user_id)
+
+        if user.has_usable_password():
+            return Response({'error': 'Password is already set'}, status=400)
+
+        user.set_password(new_password)
+        user.save() 
+        return Response({'message': 'Password set successfully'}, status=200)
+    except get_user_model().DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+
+
+class VerifyOTPView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        otp_token = request.data.get("otp_token")
+        input_otp = request.data.get("otp")
+
+        if not otp_token or not input_otp:
+            raise ValidationError("OTP token and OTP code are required.")
+
+        try:
+            payload = jwt.decode(otp_token, settings.SECRET_KEY, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed("OTP token expired.")
+        except jwt.InvalidTokenError:
+            raise AuthenticationFailed("Invalid OTP token.")
+
+        if str(payload.get("otp")) != str(input_otp):
+            raise AuthenticationFailed("Invalid OTP")
+
+        email = payload.get("email")
+        try:
+            user = get_user_model().objects.get(email=email)
+        except get_user_model().DoesNotExist:
+            raise AuthenticationFailed("User not found")
+
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        return Response({
+            "message": "OTP verified successfully",
+            "access_token": access_token,
+            "refresh_token": str(refresh),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+            }
+        }, status=HTTP_200_OK)
+
+
+class ResendOTPView(APIView):
+    def post(self, request):
+        otp_token = request.data.get("otp_token")
+
+        if not otp_token:
+            raise ValidationError("OTP token is required.")
+
+        try:
+            payload = jwt.decode(otp_token, settings.SECRET_KEY, algorithms=["HS256"], options={"verify_exp": False})
+        except jwt.InvalidTokenError:
+            raise ValidationError("Invalid OTP token.")
+
+        user_email = payload.get("email")
+
+        try:
+            user = get_user_model().objects.get(email=email)
+        except get_user_model().DoesNotExist:
+            raise ValidationError("User not found.")
+
+        new_otp = random.randint(100000, 999999)
+        new_otp_token = generate_otp_token(user, new_otp)
+
+        send_mail(
+            subject="Your New OTP Code",
+            message=f"Your new OTP code is: {new_otp}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user_email],
+            fail_silently=False,
+        )
+
+        return Response({
+            "message": "New OTP has been sent to your email",
+            "otp_token": new_otp_token
+        }, status=HTTP_200_OK)
+
+
+class SignUpView(APIView):
+    def post(self, request):
+        try:
+
+            if User.objects.exists():
+                return JsonResponse({"error": "Registration is disabled. A user already exists."}, status=403)
+
+
+            data = json.loads(request.body.decode('utf-8'))
+            print("Received Data:", data) 
+           
+            required_fields = [ "password", "first_name", "last_name", "email"]
+            for field in required_fields:
+                if field not in data or not data[field]:
+                    return JsonResponse({"error": f"{field} is required"}, status=400)
+
+
+            user = User(
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                mobiNumber=data.get("phone_number"),
+                email=data["email"]
+            )
+                
+            user.set_password(data["password"]) 
+            user.save()
+
+            print(f"User {user.email} saved successfully!")
+
+            return JsonResponse({"message": "User created successfully"}, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+       
+        except Exception as e:   
+            print(f"Error: {str(e)}")
+            return JsonResponse({"error": "An unexpected error occurred", "details": str(e)}, status=500)
+
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = PasswordResetTokenGenerator().make_token(user)
+            reset_link = f"http://127.0.0.1:3000/reset_password/{uid}/{token}/"
+
+            send_mail(
+                subject="Reset Your Password",
+                message=f"Click the link to reset your password: {reset_link}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+
+            return Response({"message": "Password reset link sent"}, status=status.HTTP_200_OK)
+        except Users.DoesNotExist:
+            return Response({"error": "Email not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ResetPasswordView(APIView):
+    def post(self, request, uidb64, token):
+        password = request.data.get("password")  
+        try:
+            
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = get_user_model().objects.get(id=uid)
+
+         
+            if PasswordResetTokenGenerator().check_token(user, token):
+                user.set_password(password)  
+                user.save()  
+                return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except (get_user_model().DoesNotExist, ValueError, TypeError):
+            return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FullReportAPIView(APIView):
+       def get(self, request):
+        metrics = Subscriptions.objects.aggregate(
+            total_subscriptions=Count('id'),
+            active_subscriptions=Count('id', filter=Q(expiring_date__gte=now().date())),
+            expired_subscriptions=Count('id', filter=Q(expiring_date__lt=now().date())),
+            total_revenue=Sum('amount')
+        )
+        list_data = list(Subscriptions.objects.values(
+            'issuing_authority', 'sub_type', 'amount', 'issuing_date', 'expiring_date'
+        ))
+
+        return Response({
+            'metrics': metrics,
+            'list': list_data
+        })
+
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+   
+    def get(self, request):
+        print("Authorization Header:", request.headers.get('Authorization'))
+        print("User:", request.user)
+        print("Is Authenticated:", request.user.is_authenticated)
+        
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        user = request.user
+        user_data = request.data
+
+        serializer = UserSerializer(user, data=user_data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+
+@parser_classes([MultiPartParser])
+def renew_subscription(request, id):
+    try:
+        subs_obj = Subscriptions.objects.get(id=id)
+    except Subscriptions.DoesNotExist:
+        return Response({"error": "Subscription not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    
+    renewal_date_str = request.data.get('renewal_date') 
+    new_expiry_str = request.data.get('new_expiry_date')
+    sub_type = request.data.get('subscription_type')
+    issuing_authority = request.data.get('provider')
+    notes = request.data.get('notes')
+    paid_amount = request.data.get('paid_amount')
+    renewal_document = request.FILES.get('renewal_document')
+
+    try:
+        renewal_date = datetime.strptime(renewal_date_str, '%Y-%m-%d').date() if renewal_date_str else None
+        new_expiry = datetime.strptime(new_expiry_str, '%Y-%m-%d').date() if new_expiry_str else None
+    except ValueError:
+        return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        if new_expiry:
+            subs_obj.expiring_date = new_expiry
+        if sub_type:
+            subs_obj.sub_type = sub_type
+        if issuing_authority:
+            subs_obj.issuing_authority = issuing_authority
+        if notes is not None:
+            subs_obj.notes = notes
+        if paid_amount:
+            subs_obj.amount = paid_amount
+        if renewal_document:
+            subs_obj.associated_documents = renewal_document
+
+        subs_obj.status = 'active'
+        subs_obj.save()
+
+        Renewing.objects.create(
+            subscriptions=subs_obj,
+            renewed_by=request.user if request.user.is_authenticated else None,
+            renewal_date=renewal_date or datetime.today().date(),
+            new_expiry_date=new_expiry or subs_obj.expiring_date,
+            paid_amount=paid_amount if paid_amount else subs_obj.amount,
+            receipt=renewal_document,
+            notes=notes,
+        )
+
+        return Response({"message": "Subscription renewed successfully."})
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
+
+
+
 
 # def extract_text_from_pdf(pdf_file):
 #     """Extract text from a PDF file (OCR for images)."""
@@ -649,575 +1329,5 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 
-
-
-
-
-
-#-------VERSION2-------#
-@api_view(['POST'])
-def create_admin(request):
-    if request.method == 'POST':
-
-        username = request.POST.get('username')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        email = request.POST.get('email')
-        mobi_number = request.POST.get('mobiNumber')
-        user_role = request.POST.get('userRole')
-        password = request.data.get('password')
-
-        is_first_user = User.objects.count() == 0
-
-        user_role = UserRole.SUPERUSER if is_first_user else request.data.get('userRole', UserRole.ADMIN)
-
-        user = User(
-        username=username,
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        mobiNumber=mobi_number,
-        userRole=user_role,
-        password_set=True  
-    )
-
-    user.set_password(password)  
-
-    
-    if is_first_user:
-        user.is_superuser = True
-        user.is_staff = True
-
-    user.save()
-
-    serializer = UserSerializer(user)
-    return Response({
-        "message": f"{'Superuser' if is_first_user else 'Admin'} created successfully.",
-        "user": serializer.data
-    })
-
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-@api_view(['GET'])
-def list_user(request):
-    admin = User.objects.all()
-    serializer = UserSerializer(admin, many=True)
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_current_user(request):
-    if request.user.is_authenticated:
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
-    else:
-        return Response({"detail": "Not authenticated"}, status=401)
-
-
-@api_view(['GET'])
-def get_user(request, id):
-    try:
-        admin_obj = User.objects.get(id=id)
-        serializer = UserSerializer(admin_obj)
-        return Response(serializer.data)
-    except User.DoesNotExist:
-        return Response({"error": "This user is not found"}, status=404)
-
-@api_view(['DELETE'])
-def delete_user(request, id):
-    try:
-        admin_obj = User.objects.get(id=id)
-        admin_obj.delete()
-        return Response({"message": "user deleted successfully"}, status=204)
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=404)
-
-
-class UserUpdateView(APIView):
-    def put(self, request, id):
-        try:
-            admin = User.objects.get(id=id)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = UserSerializer(admin, data=request.data, partial=True)
-
-        if serializer.is_valid():
-          
-            serializer.save()
-       
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-
-@api_view(['POST'])
-def create_subscription(request):
-    if request.method == 'POST': 
-        try:
-            user = request.user if request.user.is_authenticated else None
-
-            issuing_date_str = request.data.get('issuing_date')
-            expiring_date_str = request.data.get('expiring_date')
-
-                        
-            issuing_date = datetime.strptime(issuing_date_str, '%Y-%m-%d').date() if issuing_date_str else None
-            expiring_date = datetime.strptime(expiring_date_str, '%Y-%m-%d').date() if expiring_date_str else None
-
-            associated_documents = request.FILES.get('associated_documents', None)
-
-            subscription = Subscriptions(
-                user=user, 
-                sub_name=request.data.get('sub_name'),
-                sub_type=request.data.get('sub_type'),
-                issuing_authority=request.data.get('issuing_authority'),
-                issuing_date=issuing_date,
-                expiring_date=expiring_date,
-                amount=request.data.get('amount'),
-                reference=request.data.get('reference'),
-                owner_first_name=request.data.get('owner_first_name'),
-                owner_last_name=request.data.get('owner_last_name'),
-                owner_email=request.data.get('owner_email'),
-                owner_department=request.data.get('owner_department'),
-                associated_documents=associated_documents,
-            )
-            subscription.user = request.user if request.user.is_authenticated else None
-            subscription.save()
-        
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-            return redirect('subscriptions_list')
-    return render(request, 'create_subscription.html')
-
-
-class SubscriptionsViewSet(viewsets.ModelViewSet):
-    queryset = Subscriptions.objects.all().select_related('user') 
-    serializer_class = SubscriptionsSerializer
-
-    queryset = Subscriptions.objects.all()
-   
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    
-    filterset_fields = ['sub_type', 'owner_email', 'expiring_date']
-    search_fields = ['sub_type', 'owner_first_name', 'owner_last_name']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        status = self.request.query_params.get('status', None)
-        if status:
-            queryset = queryset.filter(status=status)
-        return queryset
-
-@api_view(['GET'])
-def list_subscriptions(request):
-    licenses = Subscriptions.objects.all()
-    serializer = SubscriptionsSerializer(licenses, many=True)
-    return Response(serializer.data)
-
-
-@api_view(['GET'])
-def get_subscriptions(request, id):
-    try:
-        license_obj = Subscriptions.objects.get(id=id)
-        serializer = SubscriptionsSerializer(license_obj)
-        return Response(serializer.data)
-    except Subscriptions.DoesNotExist:
-        return Response({"error": "This subscription not found"}, status=404)
-
-@api_view(['DELETE'])
-def delete_subscriptions(request, id):
-    try:
-        license_obj = Subscriptions.objects.get(id=id)
-        return Response({"message": "subscription deleted successfully"}, status=204)
-    except Subscriptions.DoesNotExist:
-        return Response({"error": "subscription not found"}, status=404)
-
-
-        license_obj.delete()
-class SubscriptionsUpdateView(APIView):
-    def put(self, request, id):
-        try:
-            license = Subscriptions.objects.get(id=id)
-        except Subscriptions.DoesNotExist:
-            return Response({'error': 'SUbscriprion not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = SubscriptionsSerializer(license, data=request.data, partial=True)
-
-        if serializer.is_valid():
-          
-            serializer.save()
-       
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-@api_view(['POST'])
-def trigger_email(request):
-
-    try:
-        send_subscription_reminder.delay()
-        return Response({"message": "Email Notification triggered!"}, status=200)
-
-    except Exception as e:
-
-        return Response({"error": str(e)}, status=500)
-
-
-def create_subscription_expiry_notification(request, subscription_id):
-    subscription = get_object_or_404(Subscriptions, id=subscription_id)
-    
-    
-    if subscription.expiring_date and subscription.expiring_date <= date.today() + timedelta(days=7):
-        admins = User.objects.filter(userRole='admin')
-        employees_with_subscription = Employees.objects.filter(assigned_subscriptions=subscription)
-
-      
-        for employee in employees_with_subscription:
-
-            admin_msg = f"{employee.firstName} {employee.lastName}'s subscription for {subscription.sub_type} is expiring on {subscription.expiring_date}."
-            for admin in admins:
-                Notification.objects.create(recipient=admin, message=admin_msg)
-
-        return JsonResponse({"message": "Notifications created for employee(s) and admin(s)."})
-    else:
-        return JsonResponse({"message": "No notifications needed. Subscription is not expiring soon."})
-
-def mark_notification_as_read(request, notification_id):
-    notification = get_object_or_404(Notification, id=notification_id)
-    notification.mark_as_read()
-    
-    return JsonResponse({"message": "Notification marked as read"})
-
-@api_view(['GET'])
-def get_notifications(request):
-    permission_classes = [IsAuthenticated] 
-
-
-    user = request.user
-    if user.is_staff:  
-        notifications = Notification.objects.all()
-    else:
-        notifications = Notification.objects.filter(recipient=user)
-    
-    notifications_data = [
-        {
-            'id': notification.id,
-            'message': notification.message,
-            'created_at': notification.created_at,
-            'read': notification.read,
-        }
-        for notification in notifications
-    ]
-    
-    return JsonResponse({"notifications": notifications_data})
-
-
-def get_unread_notifications(request):
-    user = request.user
-    if user.is_staff:  
-        notifications = Notification.objects.filter(read=False)
-    else:
-        notifications = Notification.objects.filter(recipient=user, read=False)
-    
-    notifications_data = [
-        {
-            'id': notification.id,
-            'message': notification.message,
-            'created_at': notification.created_at,
-            'read': notification.read,
-        }
-        for notification in notifications
-    ]
-    
-    return JsonResponse({"unread_notifications": notifications_data})
-
-
-
-@api_view(['POST'])
-@parser_classes([MultiPartParser])
-def renew_subscriptions(request, id):
-    license = Subscriptions.objects.get(id=id)
-
-    new_expiry = request.data.get('new_expiry_date')
-    sub_type = request.data.get('sub_type')
-    issuing_authority = request.data.get('issuing_authority')
-    notes = request.data.get('notes')
-    renewal_document = request.FILES.get('renewal_document')
-
-    try:
-        license.expiring_date = new_expiry
-        license.status = 'active'
-        license.sub_type = sub_type
-        license.issuing_authority = issuing_authority
-        license.notes = notes
-        if renewal_document:
-            license.renewal_document = renewal_document  
-        license.save()
-        return Response({"message": "Subscription renewed."})
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-def generate_otp_token(user, otp):
-    payload = {
-        "username": user.username,
-        "email": user.email,
-        "otp": otp,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
-        "iat": datetime.datetime.utcnow(),
-        "jti": str(uuid.uuid4())  
-    }
-    token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-    return token
-
-class SignInView(APIView):
-   def post(self, request):
-        username_or_email = request.data.get('username')
-        password = request.data.get('password')
-
-        print(f"Attempting to authenticate user: {username_or_email}")
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-
-        try:
-            if re.match(email_pattern, username_or_email):
-                user = get_user_model().objects.get(email=username_or_email)
-            else:
-                user = get_user_model().objects.get(username=username_or_email)
-
-            print(f"User found: {user}")
-
-            if not user.password_set:
-                return Response({
-                    'message': 'Password not set. Please create a password.',
-                    'user_id': user.id,
-                    'redirect': 'set-password'
-                }, status=200)
-
-            if user.check_password(password):
-                print("Password is correct")
-
-                otp = random.randint(100000, 999999)
-                otp_token = generate_otp_token(user, otp)
-
-                send_mail(
-                    subject="Your OTP Code",
-                    message=f"Your OTP code is: {otp}",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    fail_silently=False,
-                )
-
-                return Response({
-                    'message': 'OTP sent to your email',
-                    'otp_token': otp_token
-                }, status=HTTP_200_OK)
-            else:
-                print("Password is incorrect")
-                raise AuthenticationFailed('Invalid credentials')
-
-        except get_user_model().DoesNotExist:
-            print(f"User with username {username_or_email} does not exist")
-            raise AuthenticationFailed('User does not exist')
-
-@api_view(['POST'])
-def set_user_password(request):
-    user_id = request.data.get('user_id')
-    new_password = request.data.get('new_password')
-
-    if not user_id or not new_password:
-        return Response({'error': 'user_id and new_password are required'}, status=400)
-
-
-    try:
-        user = get_user_model().objects.get(id=user_id)
-        if user.password:
-            return Response({'error': 'Password is already set'}, status=400)
-
-        user.set_password(new_password)
-        user.save() 
-        return Response({'message': 'Password set successfully'}, status=200)
-    except get_user_model().DoesNotExist:
-        return Response({'error': 'User not found'}, status=404)
-
-
-
-class VerifyOTPView(APIView):
-    def post(self, request):
-        otp_token = request.data.get("otp_token")
-        input_otp = request.data.get("otp")
-
-        if not otp_token or not input_otp:
-            raise ValidationError("OTP token and OTP code are required.")
-
-        try:
-            payload = jwt.decode(otp_token, settings.SECRET_KEY, algorithms=["HS256"])
-        except jwt.ExpiredSignatureError:
-            raise AuthenticationFailed("OTP token expired.")
-        except jwt.InvalidTokenError:
-            raise AuthenticationFailed("Invalid OTP token.")
-
-        if str(payload.get("otp")) != str(input_otp):
-            raise AuthenticationFailed("Invalid OTP")
-
-        username = payload.get("username")
-        try:
-            user = get_user_model().objects.get(username=username)
-        except get_user_model().DoesNotExist:
-            raise AuthenticationFailed("User not found")
-
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-
-        return Response({
-            "message": "OTP verified successfully",
-            "access_token": access_token,
-            "refresh_token": str(refresh),
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-            }
-        }, status=HTTP_200_OK)
-
-
-class ResendOTPView(APIView):
-    def post(self, request):
-        otp_token = request.data.get("otp_token")
-
-        if not otp_token:
-            raise ValidationError("OTP token is required.")
-
-        try:
-            payload = jwt.decode(otp_token, settings.SECRET_KEY, algorithms=["HS256"], options={"verify_exp": False})
-        except jwt.InvalidTokenError:
-            raise ValidationError("Invalid OTP token.")
-
-        user_username = payload.get("username")
-        user_email = payload.get("email")
-
-        try:
-            user = get_user_model().objects.get(username=user_username)
-        except get_user_model().DoesNotExist:
-            raise ValidationError("User not found.")
-
-        new_otp = random.randint(100000, 999999)
-        new_otp_token = generate_otp_token(user, new_otp)
-
-        send_mail(
-            subject="Your New OTP Code",
-            message=f"Your new OTP code is: {new_otp}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user_email],
-            fail_silently=False,
-        )
-
-        return Response({
-            "message": "New OTP has been sent to your email",
-            "otp_token": new_otp_token
-        }, status=HTTP_200_OK)
-
-
-class SignUpView(APIView):
-    def post(self, request):
-        try:
-
-            if User.objects.exists():
-                return JsonResponse({"error": "Registration is disabled. A user already exists."}, status=403)
-
-
-            data = json.loads(request.body.decode('utf-8'))
-            print("Received Data:", data) 
-           
-            required_fields = ["username", "password", "first_name", "last_name", "email"]
-            for field in required_fields:
-                if field not in data or not data[field]:
-                    return JsonResponse({"error": f"{field} is required"}, status=400)
-
-
-            user = User(
-                username=data["username"],
-                first_name=data["first_name"],
-                last_name=data["last_name"],
-                mobiNumber=data.get("phone_number"),
-                email=data["email"]
-            )
-                
-            user.set_password(data["password"]) 
-            user.save()
-
-            print(f"User {user.username} saved successfully!")
-
-            return JsonResponse({"message": "User created successfully"}, status=201)
-
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON format"}, status=400)
-       
-        except Exception as e:   
-            print(f"Error: {str(e)}")
-            return JsonResponse({"error": "An unexpected error occurred", "details": str(e)}, status=500)
-
-
-class ForgotPasswordView(APIView):
-    def post(self, request):
-        email = request.data.get('email')
-        try:
-            user = User.objects.get(email=email)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = PasswordResetTokenGenerator().make_token(user)
-            reset_link = f"http://127.0.0.1:3000/reset_password/{uid}/{token}/"
-
-            send_mail(
-                subject="Reset Your Password",
-                message=f"Click the link to reset your password: {reset_link}",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
-
-            return Response({"message": "Password reset link sent"}, status=status.HTTP_200_OK)
-        except Users.DoesNotExist:
-            return Response({"error": "Email not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-class ResetPasswordView(APIView):
-    def post(self, request, uidb64, token):
-        password = request.data.get("password")  
-        try:
-            
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = get_user_model().objects.get(id=uid)
-
-         
-            if PasswordResetTokenGenerator().check_token(user, token):
-                user.set_password(password)  
-                user.save()  
-                return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
-
-        except (get_user_model().DoesNotExist, ValueError, TypeError):
-            return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class FullReportAPIView(APIView):
-       def get(self, request):
-        metrics = Subscriptions.objects.aggregate(
-            total_subscriptions=Count('id'),
-            active_subscriptions=Count('id', filter=Q(expiring_date__gte=now().date())),
-            expired_subscriptions=Count('id', filter=Q(expiring_date__lt=now().date())),
-            total_revenue=Sum('amount')
-        )
-        list_data = list(Subscriptions.objects.values(
-            'issuing_authority', 'sub_type', 'amount', 'issuing_date', 'expiring_date'
-        ))
-
-        return Response({
-            'metrics': metrics,
-            'list': list_data
-        })
 
 
