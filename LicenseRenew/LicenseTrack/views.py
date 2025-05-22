@@ -73,6 +73,16 @@ from rest_framework.status import HTTP_200_OK
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
+from weasyprint import HTML
+import tempfile
+from collections import defaultdict
+from django.template import loader
+from django.contrib.staticfiles import finders
+import codecs
+import csv
+from django.core.mail import EmailMultiAlternatives
+
+ 
 
 
 
@@ -113,6 +123,11 @@ def create_admin(request):
             user.is_staff = True
 
         user.save()
+
+        Notification.objects.create(
+            recipient=user,
+            message=f"User {first_name} {last_name} was created with role {user_role}."
+        )
 
         serializer = UserSerializer(user)
         return Response({
@@ -156,6 +171,9 @@ def delete_user(request, id):
     try:
         admin_obj = User.objects.get(id=id)
         admin_obj.delete()
+        Notification.objects.create(
+            message=f"User {admin_obj.first_name} {admin_obj.last_name} has been deleted."
+        )
         return Response({"message": "user deleted successfully"}, status=204)
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=404)
@@ -215,6 +233,12 @@ def create_subscription(request):
             )
            
             subscription.save()
+
+            Notification.objects.create(
+                recipient=user,
+                message=f"Subscription '{subscription.sub_type}' was created for {subscription.owner_first_name} {subscription.owner_last_name}."
+            )
+
         
             return Response({"message": "Subscription created successfully!"}, status=201)
 
@@ -270,6 +294,9 @@ def delete_subscriptions(request, id):
     try:
         license_obj = Subscriptions.objects.get(id=id)
         license_obj.delete()
+        Notification.objects.create(
+            message=f"Subscription '{license_obj.sub_type}' owned by {license_obj.owner_first_name} {license_obj.owner_last_name} was deleted."
+        )
         return Response({"message": "subscription deleted successfully"}, status=204)
     except Subscriptions.DoesNotExist:
         return Response({"error": "subscription not found"}, status=404)
@@ -333,6 +360,7 @@ def mark_notification_as_read(request, notification_id):
     notification.mark_as_read()
     
     return JsonResponse({"message": "Notification marked as read"})
+
 
 @api_view(['GET'])
 def get_notifications(request):
@@ -399,6 +427,10 @@ def renew_subscriptions(request, id):
         if renewal_document:
             license.renewal_document = renewal_document  
         license.save()
+        Notification.objects.create(
+            recipient=request.user,
+            message=f"Subscription '{license.sub_type}' has been renewed and is now active until {license.expiring_date}."
+        )
         return Response({"message": "Subscription renewed."})
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -436,7 +468,7 @@ class SignInView(APIView):
                 return Response({
                     'message': 'Password not set. Please create a password.',
                     'user_id': user.id,
-                    'redirect': 'set-password'
+                        'redirect': 'set-password'
                 }, status=200)
 
             if user.check_password(password):
@@ -445,13 +477,69 @@ class SignInView(APIView):
                 otp = random.randint(100000, 999999)
                 otp_token = generate_otp_token(user, otp)
 
-                send_mail(
-                    subject="Your OTP Code",
-                    message=f"Your OTP code is: {otp}",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    fail_silently=False,
-                )
+                first = user.first_name or ""
+                last = user.last_name or ""
+                greeting_name = f"{first} {last}".strip()
+                if not greeting_name:
+                    greeting_name = user.email
+
+                subject = "Your OTP Code"
+                from_email = settings.DEFAULT_FROM_EMAIL
+                to = [user.email]
+
+                text_content = f"""
+ABC ForBetterChoice
+Hi {greeting_name},
+
+Your passcode is: {otp}
+It is valid for 15 minutes.
+Please enter this passcode in the sign in page.
+"""
+
+                html_content = f"""
+<html>
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color: #fff;">
+    <table width="100%" height="100%" cellpadding="0" cellspacing="0" style="background-color:#fff;">
+        <tr>
+            <td align="center" valign="middle">
+                <table width="100%" max-width="480" cellpadding="20" cellspacing="0" style="background-color:#ffffff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td align="center" style="font-size: 28px; font-weight: bold; color: #1e3a8a; padding-bottom: 20px;">
+                            Amazingly.Better.Choice
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="font-size: 18px; color: #333333; padding-bottom: 10px;">
+                            Hi {greeting_name},
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="font-size: 20px; font-weight: bold; color: #444; padding-bottom: 10px;">
+                            Your passcode is: <span style="color:#000000;">{otp}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="font-size: 14px; color: #444; padding-bottom: 5px;">
+                            It is valid for 15 minutes.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="font-size: 14px; color: #444;">
+                            Please enter this passcode in the sign in page.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+
+                msg = EmailMultiAlternatives(subject, text_content, from_email, to)
+                msg.attach_alternative(html_content, "text/html")
+                msg.send()
+
 
                 return Response({
                     'message': 'OTP sent to your email',
@@ -748,10 +836,139 @@ def renew_subscription(request, id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+# ----PASSWORD LOGIC---- #
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = Users.objects.get(email=email)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = PasswordResetTokenGenerator().make_token(user)
+            reset_link = f"http://127.0.0.1:3000/reset_password/{uid}/{token}/"
+
+            send_mail(
+                subject="Reset Your Password",
+                message=f"Click the link to reset your password: {reset_link}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+
+            return Response({"message": "Password reset link sent"}, status=status.HTTP_200_OK)
+        except Users.DoesNotExist:
+            return Response({"error": "Email not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ResetPasswordView(APIView):
+    def post(self, request, uidb64, token):
+        password = request.data.get("password")  
+        try:
+            
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = get_user_model().objects.get(id=uid)
+
+         
+            if PasswordResetTokenGenerator().check_token(user, token):
+                user.set_password(password)  
+                user.save()  
+                return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except (get_user_model().DoesNotExist, ValueError, TypeError):
+            return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
+def html_report(request):
+    dept_data = defaultdict(lambda: {'subscriptions_count': 0, 'owners': set()})
+    for sub in Subscriptions.objects.all():
+        dept = sub.owner_department
+        dept_data[dept]['subscriptions_count'] += 1
+        dept_data[dept]['owners'].add(sub.owner_email)
 
+    departments = []
+    for dept, values in dept_data.items():
+        departments.append({
+            'department': dept,
+            'subscriptions_count': values['subscriptions_count'],
+            'owners_count': len(values['owners']),
+        })
+
+    issuing_data = defaultdict(lambda: {'subscriptions_count': 0, 'total_amount': 0})
+    for sub in Subscriptions.objects.all():
+        auth = sub.issuing_authority
+        issuing_data[auth]['subscriptions_count'] += 1
+        issuing_data[auth]['total_amount'] += sub.amount or 0
+
+    subscriptions = []
+    for auth, values in issuing_data.items():
+        subscriptions.append({
+            'issuing_authority': auth,
+            'subscriptions_count': values['subscriptions_count'],
+            'total_amount': values['total_amount'],
+
+        })
+
+    total_expenditure = sum(sub['total_amount'] for sub in subscriptions)
+
+    download_format = request.GET.get("download")
+
+    if download_format == "pdf":
+        logo_path = 'file://' + '/home/Sali/Documents/License_Renew_Track_System/license-renew-frontend/public/ABC1.png'
+    else:
+        logo_path = ''
+
+    context = {
+        'logo_path': logo_path,
+        'header': 'African Banking Coraparation Ltd.',
+        'address': 'ABC Bank House, Westlands <br/>'
+                    'P. O. Box 13889 – 00800, Nairobi, Kenya.<br/>'
+                    'Tel: +254 (20) 4263000, 4447352, 4447353 <br/>'
+                    'Email: talk2us@abcthebank.com <br/>',
+        'heading': 'Renewal Compliance Report',
+        'departments': departments,
+        'subscriptions': subscriptions,
+        'total_expenditure': total_expenditure,
+        'footer': 'African Banking Corporation Limited is regulated by the Central Bank of Kenya'
+    }
+
+
+    if download_format == "csv":
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="compliance_report.csv"'
+
+     
+        response.write(codecs.BOM_UTF8)
+
+        writer = csv.writer(response)
+
+        writer.writerow(['Department', 'Number of Subscriptions', 'Number of Owners'])
+        for dept in departments:
+            writer.writerow([dept['department'], dept['subscriptions_count'], dept['owners_count']])
+        
+        writer.writerow([])  
+
+        writer.writerow(['Issuing Authority', 'Total Subscriptions', 'Total Amount'])
+        for sub in subscriptions:
+            writer.writerow([sub['issuing_authority'], sub['subscriptions_count'], sub['total_amount']])
+
+        return response
+
+ 
+    template = loader.get_template('report_template.html')
+    html_content = template.render(context)
+
+    if download_format == "pdf":
+        with tempfile.NamedTemporaryFile(delete=True, suffix=".pdf") as output:
+            HTML(string=html_content, base_url=request.build_absolute_uri()).write_pdf(output.name)
+            output.seek(0)
+            response = HttpResponse(output.read(), content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="compliance_report.pdf"'
+            return response
+
+    
+    return HttpResponse(html_content)
 
 
 

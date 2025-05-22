@@ -38,7 +38,7 @@ const Reports = () => {
 
   const handleDownload = (format) => {
     const token = sessionStorage.getItem("token");
-    const url = `http://localhost:8000/reports/generate/${format}/`;
+    const url = `http://localhost:8000/api/report/html/?download=${format}`;
   
     fetch(url, {
       headers: {
@@ -52,7 +52,7 @@ const Reports = () => {
       .then((blob) => {
         const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
-        link.download = `Subscription_Report.${format === "pdf" ? "pdf" : "xlsx"}`;
+        link.download = `Subscription_Report.${format === "pdf" ? "pdf" : "csv"}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -71,21 +71,69 @@ const Reports = () => {
   }
 
   return (
-    <Container>
-      <Box sx={{ my: 1 }}>
-        <Paper sx={{ padding: 1 }}>
-          <ReportsOutput data={data} /> 
-          <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
-            <Button variant="contained" color="primary" onClick={() => handleDownload("pdf")}>
+    <div className="container">
+      <div className="box my-1">
+        <div className="paper">
+          <ReportsOutput data={data} />
+          <div className="button-row">
+            <button className="btn primary" onClick={() => handleDownload("pdf")}>
               Download PDF
-            </Button>
-            <Button variant="contained" color="secondary" onClick={() => handleDownload("excel")}>
+            </button>
+            <button className="btn secondary" onClick={() => handleDownload("csv")}>
               Download Excel
-            </Button>
-          </Box>
-        </Paper>
-      </Box>
-    </Container>
+            </button>
+          </div>
+        </div>
+      </div>
+      <style>
+        {`.container {
+          display: flex;
+          flex-direction: column;
+          gap: 40px;
+          padding: 24px;
+        }
+
+        .box {
+          margin-top: 8px;  
+          margin-bottom: 8px;
+        }
+
+        .button-row {
+          margin-top: 16px;
+          display: flex;
+          gap: 16px;        
+        }
+
+        .btn {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 4px;
+          font-weight: 500;
+          cursor: pointer;
+          color: white;
+          font-size: 1rem;
+          transition: background-color 0.3s ease;
+        }
+
+        .btn.primary {
+          background-color: #1976d2;
+        }
+
+        .btn.primary:hover {
+          background-color: #115293;
+        }
+
+        .btn.secondary {
+          background-color: #9c27b0; 
+        }
+
+        .btn.secondary:hover {
+          background-color: #6d1b7b;
+        }
+      `}
+      </style>
+    </div>
+
   );
 };
 

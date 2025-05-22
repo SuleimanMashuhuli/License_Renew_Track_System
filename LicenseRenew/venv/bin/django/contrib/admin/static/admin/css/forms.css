@@ -266,7 +266,7 @@ body.popup .submit-row {
 }
 
 .submit-row input.default {
-    text-transform: uppercase;
+    #text-transform: uppercase;
 }
 
 .submit-row a.deletelink {

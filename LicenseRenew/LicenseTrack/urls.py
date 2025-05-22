@@ -10,9 +10,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 #-----v2-------#
 from .views import create_admin, create_subscription, list_subscriptions, get_subscriptions, delete_subscriptions, SubscriptionsUpdateView, SubscriptionsViewSet, trigger_email, create_subscription_expiry_notification, mark_notification_as_read, get_notifications, get_unread_notifications
-from .views import UserViewSet, get_current_user, get_user, delete_user, UserUpdateView, SignUpView, FullReportAPIView, renew_subscription
+from .views import UserViewSet, get_current_user, get_user, delete_user, UserUpdateView, SignUpView, FullReportAPIView, renew_subscription, ForgotPasswordView, ResetPasswordView
 from .views import SignInView, VerifyOTPView, ResendOTPView, set_user_password, ForgotPasswordView, ResetPasswordView, UserProfileView, list_all_users  
-
+from .views import html_report
 
 
 # Router for ViewSet
@@ -71,6 +71,12 @@ urlpatterns = [
 
     path('renew/', renew_subscription, name='renew_subscription'),
 
+    # Passwords
+    path('forgot_password/', ForgotPasswordView.as_view(), name='forgot-password'),
+    path('reset_password/<uidb64>/<token>/', ResetPasswordView.as_view(), name='reset-password'),
+
+    # Report
+    path('report/html/', html_report, name='html_report'),
 
 
 

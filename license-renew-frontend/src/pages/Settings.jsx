@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Table, TableHeader, TableBody, TableRow, TableCell } from '../components/Table.jsx';
 
 const ViewProfile = () => {
   const [profile, setProfile] = useState(null);
@@ -137,17 +138,56 @@ const ViewProfile = () => {
     
 
             <h2>About me</h2>
-            <table>
-                <tr><td>Organization</td><td>ABC Bank Ltd</td></tr>
-                <tr><td>Industry</td><td>Banking</td></tr>
-                <tr><td>Occupation</td><td>Banker</td></tr>
-                <tr><td>Location</td><td>Woodvale Grove, Westlands, Nairobi</td></tr>
-                <tr><td>Department</td><td>Logistics</td></tr>
-                <tr><td>Introduction</td><td>Our system manages all licenses of ABC Bank Institution and help to remind on renewals upon their respective due dates. With the help of ICT Department, Division of Software Development team that tried to come with this small system to help manage the renewal issues. Thank you for being so supportive! <br/><br/>Senoir Manager, Software Development<br/><a href="https://contacts.google.com/person/c8581039976862175743">Samuel Waithaka</a></td></tr>
-                <tr><td>Interests</td><td>Support</td></tr>
-                <tr><td></td><td></td></tr>
-                
-            </table>
+            <Table>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Organization</TableCell>
+                  <TableCell>ABC Bank Ltd</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Industry</TableCell>
+                  <TableCell>Banking</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Occupation</TableCell>
+                  <TableCell>Banker</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Woodvale Grove, Westlands, Nairobi</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Department</TableCell>
+                  <TableCell>Logistics</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Introduction</TableCell>
+                  <TableCell>
+                    Our system manages all licenses of ABC Bank Institution and helps
+                    to remind on renewals upon their respective due dates. With the
+                    help of ICT Department, Division of Software Development team that
+                    tried to come up with this small system to help manage the renewal
+                    issues. Thank you for being so supportive!
+                    <br />
+                    <br />
+                    Senior Manager, Software Development
+                    <br />
+                    <a
+                      href="https://contacts.google.com/person/c8581039976862175743"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      Samuel Waithaka
+                    </a>
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Interests</TableCell>
+                  <TableCell>Support</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
 
             <div class="footer">You smile I'm happy</div>
         </main>
@@ -182,7 +222,7 @@ const ViewProfile = () => {
         gap:50px;
       }
     .profile-sidebar{
-        width:200px;
+        width:300px;
         flex-shrink:0;
         text-align:center;
     }
@@ -219,6 +259,7 @@ const ViewProfile = () => {
         margin-top:25px;
         font-size:13px;
         line-height:1.6;
+        width: 100%;
     }
     .panel a{
         color:var(--link);

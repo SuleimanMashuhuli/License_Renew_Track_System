@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/Table.jsx';
 
 export default function RenewalsPage() {
   const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
@@ -55,36 +56,37 @@ export default function RenewalsPage() {
       {expiredSubscriptions.length === 0 ? (
         <p>No expired subscriptions at the moment.</p>
       ) : (
-        <table className="renewals-table">
-          <caption>Subscriptions expired and need attention.</caption>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Provider</th>
-              <th>Department</th>
-              <th>Expired On</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expiredSubscriptions.map((sub) => (
-              <tr key={sub.id}>
-                <td>{sub.sub_name}</td>
-                <td>{sub.issuing_authority}</td>
-                <td>{sub.owner_department}</td>
-                <td>{sub.expiring_date}</td>
-                <td>
-                  <button
-                    className="renew-btn"
-                    onClick={() => handleRenewClick(sub)}
-                  >
-                    Renew
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        
+          <Table className="renewals-table">
+            <caption>Subscriptions expired and need attention.</caption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Provider</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Expired On</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {expiredSubscriptions.map((sub) => (
+                <TableRow key={sub.id}>
+                  <TableCell>{sub.sub_name}</TableCell>
+                  <TableCell>{sub.issuing_authority}</TableCell>
+                  <TableCell>{sub.owner_department}</TableCell>
+                  <TableCell>{sub.expiring_date}</TableCell>
+                  <TableCell>
+                    <button
+                      className="renew-btn"
+                      onClick={() => handleRenewClick(sub)}
+                    >
+                      Renew
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
       )}
 
       {showModal && selectedSubscription && (
@@ -187,14 +189,14 @@ export default function RenewalsPage() {
         th,
         td {
           padding: 8px 15px;
-          border-bottom: 1px solid black;
+          border-bottom: 1px solid #a3a3a3;
         }
 
         th {
           background-color: #f5f5f5;
           font-weight: 900;
           color: black;
-          text-transform: uppercase;
+          #text-transform: uppercase;
           font-size: 14px;
         }
 

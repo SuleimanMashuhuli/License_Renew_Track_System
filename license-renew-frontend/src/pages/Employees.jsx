@@ -108,6 +108,7 @@ export default function UserManagement() {
                       <TableHead>Name</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Issuing Authority</TableHead>
+                      <TableHead>Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -116,6 +117,7 @@ export default function UserManagement() {
                         <TableCell>{sub.sub_name}</TableCell>
                         <TableCell>{sub.sub_type}</TableCell>
                         <TableCell>{sub.issuing_authority}</TableCell>
+                        <TableCell>Ksh. {sub.amount}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -164,16 +166,19 @@ export default function UserManagement() {
         }
 
         .employees-table {
-          width: 60%;
-          // border: 1px solid #333;
+          width: 55%;
+          border-right: 1px solid #a3a3a3;
+          border-left: 1px solid #a3a3a3;
+          border-top: 1px solid #a3a3a3;
           // border-radius: 10px;
           overflow: hidden;
         }
 
         .employees-table-right {
-          width: 40%;
-          // border: 1px solid #333;
-          // border-radius: 10px;
+          width: 45%;
+          border-right: 1px solid #a3a3a3;
+          border-left: 1px solid #a3a3a3;
+          border-top: 1px solid #a3a3a3;
           overflow: hidden;
         }
 
@@ -181,18 +186,22 @@ export default function UserManagement() {
           width: 100%;
           border-collapse: collapse;
           text-align: left;
+          table-layout: fixed;
         }
 
         th, td {
           padding: 8px 15px;
-          border-bottom: 1px solid black;
+          border-bottom: 1px solid #a3a3a3;
+          overflow: hidden;
+          text-overflow: ellipsis; 
+          white-space: nowrap;
         }
 
         th {
           background-color: #f5f5f5;
           font-weight: bold;
           color: #333;
-          text-transform: uppercase;
+          #text-transform: uppercase;
           font-size: 14px;
         }
 

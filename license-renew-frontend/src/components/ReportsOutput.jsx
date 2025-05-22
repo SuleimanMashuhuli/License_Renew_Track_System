@@ -3,6 +3,8 @@ import {
   BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
 import "react-datepicker/dist/react-datepicker.css";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/Table.jsx';
+
 
 const ReportsOutput = () => {
   const [subscriptions, setSubscriptions] = useState({});
@@ -106,36 +108,46 @@ const ReportsOutput = () => {
   
       <div className="data-table-container">
         <h2>Subscription Data</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Provider</th>
-              <th>Subscription Type</th>
-              <th>Amount Paid</th>
-              <th>Issue Date</th>
-              <th>Expiry Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {subscriptionData.map((sub, index) => (
-              <tr key={index}>
-                <td>{sub.issuing_authority || "N/A"}</td>
-                <td>{sub.sub_type || "N/A"}</td>
-                <td>Kshs.{sub.amount || "0.00"}</td>
-                <td>{sub.issuing_date || "N/A"}</td>
-                <td>{sub.expiring_date || "N/A"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Provider</TableHead>
+                <TableHead>Subscription Type</TableHead>
+                <TableHead>Amount Paid</TableHead>
+                <TableHead>Issue Date</TableHead>
+                <TableHead>Expiry Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {subscriptionData.map((sub, index) => (
+                <TableRow key={index}>
+                  <TableCell>{sub.issuing_authority || "N/A"}</TableCell>
+                  <TableCell>{sub.sub_type || "N/A"}</TableCell>
+                  <TableCell>Kshs.{sub.amount || "0.00"}</TableCell>
+                  <TableCell>{sub.issuing_date || "N/A"}</TableCell>
+                  <TableCell>{sub.expiring_date || "N/A"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+        </Table>
       </div>
 
       
       <style>{`
+        .reports-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 24px;
+            max-width: 1200px; 
+            margin: 0 auto;     
+            box-sizing: border-box;
+            width: 100%;
+        }
         .summary {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 1rem;
+           display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+          gap: 16px;
           margin-bottom: 1.5rem;
         }
         .metric-item {

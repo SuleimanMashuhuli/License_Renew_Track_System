@@ -20,10 +20,10 @@ export default function Sidebar() {
           <Link to="employees"><i className="fa-solid fa-user-group"></i>&nbsp; Employees</Link>
         </div>
         <div className="sidebar-link">
-          <Link to="renewing"><i className="fa fa-refresh" aria-hidden="true"></i>&nbsp; Renewals</Link>
+          <Link to="admins/manage"><i className="fa-solid fa-user-gear" aria-hidden="true"></i>&nbsp; Admins</Link>
         </div>
         <div className="sidebar-link">
-          <Link to="admins/manage"><i className="fa-solid fa-user-gear" aria-hidden="true"></i>&nbsp; Admins</Link>
+          <Link to="renewing"><i className="fa fa-refresh" aria-hidden="true"></i>&nbsp; Renewals</Link>
         </div>
         <div className="sidebar-link dropdown">
           <div className="dropdown-header">

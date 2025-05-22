@@ -207,7 +207,13 @@ const Login = () => {
           </form>
         ) : (
           <form onSubmit={handleVerify} className="signin-form">
-            <h2 className="form-title">Enter the OTP we emailed you</h2>
+            <h2 className="form-title">Two-Factor Authentication</h2>
+
+            <p>Designed to prevent anyone accessing your account without your concsent</p>
+
+            <p>We have sent code to your email </p>
+
+            <h3 className="form-sub">Enter the six diigit code</h3>
             {error && <p className="error">{error}</p>}
             <div className="otp-inputs">
               {otp.slice(0, 3).map((digit, index) => (
@@ -344,8 +350,32 @@ const Login = () => {
   gap: 12px;
   width: 60%;
   max-width: 600px;
+  text-align: center;
+}
+.signin-form h2.form-title,
+.signin-form p,
+.signin-form h1.form-sub {
+  margin: 0.5em 0;
+  font-weight: normal; 
+  color: #333;
 }
 
+.signin-form h2.form-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.signin-form h1.form-sub {
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin-top: 1.5em; 
+}
+
+.signin-form p {
+  font-size: 1rem;
+  line-height: 1.4;
+  color: #555;
+}
 .form-title {
   text-align: center;
   color: #1e3a8a;

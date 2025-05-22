@@ -263,7 +263,8 @@ export default function Admins () {
                 <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>MObile</TableHead>
+                <TableHead>Mobile</TableHead>
+                <TableHead>Joined Date</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Action</TableHead> 
                 </TableRow>
@@ -274,6 +275,7 @@ export default function Admins () {
                     <TableCell>{admins.first_name} {admins.last_name}</TableCell>
                     <TableCell>{admins.email}</TableCell>
                     <TableCell>{admins.mobiNumber}</TableCell>
+                    <TableCell>{admins.date_joined}</TableCell>
                     <TableCell>{admins.userRole}</TableCell>
                     <TableCell>
                       <ActionMenu sub={admins} handleEditAdmin={(admin) => { handleEditAdmin(admin); 
@@ -406,6 +408,9 @@ export default function Admins () {
         
         .table-container {
           border: px solid #111111;
+           border-right: 1px solid #a3a3a3;
+          border-left: 1px solid #a3a3a3;
+          border-top: 1px solid #a3a3a3;
        
           overflow: hidden;
         }
@@ -421,14 +426,14 @@ export default function Admins () {
         th,
         td {
           padding: 8px 15px;
-          border-bottom: 1px solid black;
+          border-bottom: 1px solid #a3a3a3;
         }
 
         th {
           background-color: #f5f5f5;
           font-weight: bold;
           color: #333;
-          text-transform: uppercase;
+          // #text-transform: uppercase;
           font-size: 14px;
         }
 

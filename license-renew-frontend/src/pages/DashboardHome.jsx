@@ -157,8 +157,11 @@ export default function DashboardHome() {
 
         .table-container {
           width: 100%;
-          border: 1px solid #333;
-          border-radius: 10px;
+          border: 1px solid #a3a3a3;
+           border-right: 1px solid #a3a3a3;
+          border-left: 1px solid #a3a3a3;
+          border-top: 1px solid #a3a3a3;
+         
           overflow: hidden;
           overflow-x: auto;
           margin-top: 2rem;
@@ -181,7 +184,7 @@ export default function DashboardHome() {
           background-color: #f5f5f5;
           font-weight: bold;
           color: #333;
-          text-transform: uppercase;
+          #text-transform: uppercase;
           font-size: 14px;
         }
 

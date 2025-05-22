@@ -180,7 +180,7 @@ h5 {
     font-size: 0.625rem;
     margin: 1.5em 0 .5em 0;
     color: var(--body-quiet-color);
-    text-transform: uppercase;
+    #text-transform: uppercase;
     letter-spacing: 1px;
 }
 
@@ -364,7 +364,7 @@ tr:nth-child(odd) + .row-form-errors .errorlist {
 thead th {
     padding: 5px 10px;
     line-height: normal;
-    text-transform: uppercase;
+    #text-transform: uppercase;
     background: var(--darkened-bg);
 }
 
@@ -608,7 +608,7 @@ input[type=button][disabled].default {
 .inline-group h2 {
     font-size: 0.75rem;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
+    #text-transform: uppercase;
 }
 
 .module table {
@@ -794,7 +794,7 @@ a.deletelink:focus, a.deletelink:hover {
     color: var(--object-tools-fg);
     font-weight: 400;
     font-size: 0.6875rem;
-    text-transform: uppercase;
+    #text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
@@ -1005,7 +1005,7 @@ a.deletelink:focus, a.deletelink:hover {
     font-weight: 300;
     font-size: 0.6875rem;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
+    #text-transform: uppercase;
 }
 
 #user-tools a, #logout-form button {

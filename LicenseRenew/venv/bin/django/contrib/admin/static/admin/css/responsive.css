@@ -805,7 +805,7 @@ input[type="submit"], button {
 
     .login .submit-row input {
         margin: 0;
-        text-transform: uppercase;
+        #text-transform: uppercase;
     }
 
     .errornote {

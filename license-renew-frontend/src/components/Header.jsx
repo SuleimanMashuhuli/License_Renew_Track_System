@@ -9,6 +9,8 @@ export default function Header() {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState([]);
   const token = sessionStorage.getItem("token");
 
   useEffect(() => {
@@ -36,14 +38,17 @@ export default function Header() {
 
   useEffect(() => {
     setIsModalOpen(false);
+    setIsNotificationModalOpen(false);
   }, [location]);
 
   const handleProfileClick = () => {
     setIsModalOpen(true);
+    setIsNotificationModalOpen(false);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+
   };
 
   const handleSearchKeyDown = async (e) => {
@@ -98,10 +103,38 @@ export default function Header() {
     }
   };
 
+
+  const handleDownloadReport = () => {
+    window.open("http://127.0.0.1:8000/api/report/html/?download=pdf", "_blank");
+  };
+  
+
   const handleLogout = () => {
     sessionStorage.removeItem("token");
     navigate("/sign_in");
   };
+
+ 
+
+    useEffect(() => {
+      const fetchUnreadNotifications = async () => {
+        try {
+          const response = await axios.get("http://127.0.0.1:8000/notifications/unread/", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          setUnreadNotifications(response.data.unread_notifications);
+        } catch (error) {
+          console.error("Error fetching unread notifications:", error);
+        }
+      };
+
+      if (token) {
+        fetchUnreadNotifications();
+      }
+    }, [token]);
+
 
   const initials = userData
     ? `${userData.first_name?.[0] || ""}${userData.last_name?.[0] || ""}`
@@ -119,8 +152,19 @@ export default function Header() {
       />
 
       <div className="right-section">
-        <button className="notification-button">
+      <button
+          className="notification-button"
+          style={{ position: "relative" }}
+          onClick={() => {
+            setIsNotificationModalOpen(!isNotificationModalOpen);
+            setIsModalOpen(false);
+          }}
+          aria-label="Toggle notifications"
+        >
           <i className="far fa-bell"></i>
+          {unreadNotifications.length > 0 && (
+            <span className="notification-badge"></span>
+          )}
         </button>
 
         <div className="profile-box" onClick={handleProfileClick}>
@@ -140,17 +184,20 @@ export default function Header() {
       </div>
 
       {isModalOpen && (
-          <div className="modal-overlay" onClick={handleCloseModal} >
+        <div className="modal-overhead" onClick={handleCloseModal}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="user-header">
               <img
                 src="/Faceless businessman avatar_ Man in suit with blue tie.jpeg"
                 className="avatar-img"
                 width="50"
                 height="50"
-                alt=""
+                alt="User Avatar"
               />
               <div className="user-info">
-                <h6 className="user-name">{userData?.first_name} {userData?.last_name}</h6>
+                <h6 className="user-name">
+                  {userData?.first_name} {userData?.last_name}
+                </h6>
                 <small className="user-department">Dpt. Logistics</small>
               </div>
             </div>
@@ -160,28 +207,53 @@ export default function Header() {
             <ul className="menu-list">
               <li>
                 <a href="pages-user-profile.html" className="menu-item">
-                  <i className="bi bi-person-fill icon"></i> <span>Profile</span>
+                  <i class="fa fa-user" aria-hidden="true"></i> &nbsp;   <span className="label">Edit profile</span>
                 </a>
               </li>
               <li>
                 <a href="#" className="menu-item">
-                  <i className="bi bi-gear-fill icon"></i> <span>Setting</span>
+                  <i class="fa-solid fa-gear"></i> &nbsp;   <span className="label">Settings</span>
                 </a>
               </li>
               <li>
-                <a href="#" className="menu-item">
-                  <i className="bi bi-cloud-arrow-down-fill icon"></i> <span>Downloads</span>
+                <a href="#" onClick={handleDownloadReport} className="menu-item">
+                <i class="fa-solid fa-cloud-arrow-down"></i> &nbsp;   <span className="label">Download Report</span>
                 </a>
               </li>
             </ul>
 
             <hr className="divider" />
 
-            <div onClick={handleLogout} className="menu-item logout-item">
-              <i className="bi bi-lock-fill icon"></i> <span>Logout</span>
+            <div onClick={handleLogout} className="menu-item logout-item" role="button" tabIndex={0} >
+              <i class="fas fa-sign-out"></i> &nbsp;   <span className="label">Logout</span>
             </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {isNotificationModalOpen && (
+        <div
+          className="modal-over"
+          onClick={() => setIsNotificationModalOpen(false)}
+        >
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h4>Notifications</h4>
+            <ul className="notification-list">
+              {unreadNotifications.length === 0 ? (
+                <li>No unread notifications</li>
+              ) : (
+                unreadNotifications.map((notification) => (
+                  <li key={notification.id} className="notification-item">
+                    <strong>{notification.title}</strong>
+                    <p>{notification.message}</p>
+                    <small>{new Date(notification.timestamp).toLocaleString()}</small>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
 
 
       <style>
@@ -228,6 +300,27 @@ export default function Header() {
             align-items: center;
             justify-content: center;
           }
+            .notification-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+          }
+
+          .notification-list li {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-bottom: 1px solid #ddd;
+          }
+            .notification-badge {
+              position: absolute;
+              top: 0;
+              right: 0;
+              width: 10px;
+              height: 10px;
+              background-color: red;
+              border-radius: 50%;
+            }
+
             .profile-box .user-details .user-name {
             font-weight: 400;
             font-size: 0.8rem;
@@ -274,53 +367,33 @@ export default function Header() {
             color: #555;
           }
 
+          .modal-overhead {
+            position: fixed;
+            top: 72px;
+            right: 1.5rem;
+            bottom: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: flex-end;
+            padding: 1rem;
+            z-index: 1050;
+          }
+
           .modal-box {
             background: white;
-            padding: 1.5rem;
             border-radius: 12px;
             min-width: 280px;
             max-width: 350px;
+            max-height: 300px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
+            cursor: auto;
           }
 
-          .modal-header-row {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-          }
-
-          .modal-user-name {
-            font-weight: 600;
-            font-size: 1rem;
-            color: hsl(224.4, 64.3%, 32.9%);;
-          }
-
-          .modal-overlay {
-            position: fixed;
-            top: 72px; 
-            right: 1rem;
-            background: #fff;
-            display: grid;
-            align-items: flex-start;
-            justify-content: flex-end;
-            padding: 1rem;
-            z-index: 999;
-            margin: 0;  
-          }
-
-          .close-btn {
-            margin-top: 1rem;
-            background: #1f2937;
-            color: white;
-            border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 5px;
-            cursor: pointer;
-          }
-            .user-header {
+          .user-header {
             display: flex;
             align-items: center;
             margin-bottom: 1rem;
@@ -328,6 +401,9 @@ export default function Header() {
 
           .avatar-img {
             border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
           }
 
           .user-info {
@@ -359,29 +435,71 @@ export default function Header() {
           }
 
           .menu-item {
-            display: flex;
+            display: flex;               
             align-items: center;
+            width: 100%;                 
+            padding: 0.35rem 0.45rem;       
             text-decoration: none;
-            color: #212529;
-            padding: 0.4rem 0;
-            cursor: pointer;
+            color: #333;
+            border-radius: 1px;   
+            transition: background-color 0.2s ease;
           }
 
           .menu-item:hover {
-            color: #0d6efd;
+            background-color: hsl(224.4, 64.3%, 32.9%);;
+            color: white;
+          }
+          .menu-item:hover .icon,
+          .menu-item:hover .label {
+            color: white;
           }
 
           .icon {
-            margin-right: 0.75rem;
-            font-size: 1.1rem;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 32px;     
+            min-width: 32px;
+            font-size: 1.2rem;
+            color: inherit;
+          }
+
+          .label {
+            margin-left: 0.5rem;
+            color: inherit;
           }
 
           .logout-item {
             color: #dc3545;
             font-weight: 500;
+            cursor: pointer;
           }
+
           .logout-item:hover {
             color: #b02a37;
+          }
+
+            .modal-over {
+            position: fixed;
+            top: 72px;
+            right: 1.5rem;
+            width: 100%;
+            bottom: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: flex-end;
+            padding: 1rem;
+            z-index: 1010;
+          }
+
+          .modal-body {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 320px;
+            max-height: 80vh;
+            overflow-y: auto;
           }
 
         `}

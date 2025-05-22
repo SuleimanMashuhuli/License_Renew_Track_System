@@ -28,7 +28,7 @@ const ActionMenu = ({ sub, index, openModal, handleDelete }) => {
          .icon-buttons {
           display: flex;
           gap: 10px;
-          justify-content: center;
+          justify-content: start;
         }
 
         .icon-button {
@@ -245,6 +245,29 @@ export default function Subscriptions() {
     }
   };
 
+  const getStatusText = (expiringDate) => {
+    if (!expiringDate) return 'Unknown';
+    const now = new Date();
+    const expiry = new Date(expiringDate);
+    const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+  
+    if (diffDays < 0) return 'Expired';
+    if (diffDays <= 7) return 'Due Soon';
+    return 'Active';
+  };
+  
+  const getStatusClass = (expiringDate) => {
+    if (!expiringDate) return 'status-unknown';
+    const now = new Date();
+    const expiry = new Date(expiringDate);
+    const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+  
+    if (diffDays < 0) return 'status-expired';
+    if (diffDays <= 7) return 'status-due-soon';
+    return 'status-active';
+  };
+  
+
   return (
     <div className="subscriptions-page">
       <h1></h1>
@@ -364,9 +387,9 @@ export default function Subscriptions() {
               <TableHead>Issuing Authority</TableHead>
               <TableHead>Issuing Date</TableHead>
               <TableHead>Expiry Date</TableHead>
-              <TableHead>Amount</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Reference</TableHead>
-              <TableHead>Assigned</TableHead>
+              <TableHead>Assigned To</TableHead>
               <TableHead>Action</TableHead> 
             </TableRow>
           </TableHeader>
@@ -376,9 +399,23 @@ export default function Subscriptions() {
                 <TableCell>{sub.sub_name}</TableCell>
                 <TableCell>{sub.sub_type}</TableCell>
                 <TableCell>{sub.issuing_authority}</TableCell>
-                <TableCell>{sub.issuing_date ? new Date(sub.issuing_date).toLocaleDateString() : "N/A"}</TableCell>
-                <TableCell>{sub.expiring_date ? new Date(sub.expiring_date).toLocaleDateString() : "N/A"}</TableCell>
-                <TableCell>Ksh.{sub.amount}</TableCell>
+                <TableCell>{sub.issuing_date ? new Date(sub.issuing_date).toLocaleDateString("en-GB") : "N/A"}</TableCell>
+                <TableCell>{sub.expiring_date ? new Date(sub.expiring_date).toLocaleDateString("en-GB") : "N/A"}</TableCell>
+                <TableCell>
+                  {(() => {
+                    const today = new Date();
+                    const expiry = new Date(sub.expiring_date);
+                    const daysDiff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+
+                    if (daysDiff < 0) {
+                      return <span className="badge badge-expired">Expired</span>;
+                    } else if (daysDiff <= 7) {
+                      return <span className="badge badge-due-soon">Due Soon</span>;
+                    } else {
+                      return <span className="badge badge-active">Active</span>;
+                    }
+                  })()}
+                </TableCell>
                 <TableCell>{sub.reference}</TableCell>
                 <TableCell>{sub.user ? `${sub.user.first_name} ${sub.user.last_name}` : "N/A"}</TableCell>
                 <TableCell>
@@ -510,7 +547,10 @@ export default function Subscriptions() {
         }
         
         .table-container {
-          border: px solid #111111;
+          border: px solid #a3a3a3;
+           border-right: 1px solid #a3a3a3;
+          border-left: 1px solid #a3a3a3;
+          border-top: 1px solid #a3a3a3;
        
           overflow: hidden;
         }
@@ -526,14 +566,14 @@ export default function Subscriptions() {
         th,
         td {
           padding: 8px 15px;
-          border-bottom: 1px solid black;
+          border-bottom: 1px solid #a3a3a3;
         }
 
         th {
           background-color: #f5f5f5;
           font-weight: bold;
           color: #333;
-          text-transform: uppercase;
+          #text-transform: uppercase;
           font-size: 14px;
         }
 
@@ -549,6 +589,30 @@ export default function Subscriptions() {
         tbody tr:hover {
           background-color: #fff;
         }
+         .badge {
+            display: inline-block;
+            padding: 1px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: left;
+          }
+
+          .badge-active {
+            background-color: #d4edda;
+            color: #155724;
+          }
+
+          .badge-due-soon {
+            background-color: #fff3cd;
+            color: #856404;
+          }
+
+          .badge-expired {
+            background-color: #f8d7da;
+            color: #721c24;
+          }
+
 
         caption {
           margin-top: 1rem;
