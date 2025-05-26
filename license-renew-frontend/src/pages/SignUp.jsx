@@ -6,7 +6,7 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
-    phone_number: "",
+    mobiNumber: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -82,7 +82,7 @@ const SignUp = () => {
 
           <input type="text" name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleChange} required />
           <input type="text" name="last_name" placeholder="Last Name" value={formData.last_name} onChange={handleChange} required />
-          <input type="text" name="phone_number" placeholder="Phone Number" value={formData.phone_number} onChange={handleChange} />
+          <input type="text" name="mobiNumber" placeholder="Phone Number" value={formData.mobiNumber} onChange={handleChange} />
           <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
           <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
           <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} required />
@@ -258,6 +258,9 @@ const SignUp = () => {
               width: 100%;
               padding: 30px;
             }
+                 .description {
+              font-size: 32px; 
+            }
 
             .signup-left {
               align-items: center;
@@ -286,6 +289,23 @@ const SignUp = () => {
               font-size: 13px;
             }
           }
+
+
+          @media (max-width: 480px) {
+            .description {
+              font-size: 32px; 
+            }
+
+            .signup-form {
+              width: 90%; 
+            }
+
+            .submit-btn {
+              font-size: 13px;
+              padding: 8px;
+            }
+          }
+
 
         `}
       </style>

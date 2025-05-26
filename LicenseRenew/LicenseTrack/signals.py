@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import m2m_changed, post_save, pre_save
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 from datetime import date, timedelta
@@ -22,14 +22,25 @@ def first_admin(sender, request, user, **kwargs):
 
 
 @receiver(post_save, sender=Subscriptions)
-def create_subscription_notification(sender, instance, created, **kwargs):
+def create_Subscriptions_notification(sender, instance, created, **kwargs):
     if created:
-        message = f"Welcome {instance.owner_first_name} {instance.owner_last_name}, you have been assigned a new subscription."
+        owner_names = ', '.join([f"{o.first_name} {o.last_name}" for o in instance.owners.all()])
+        message = f"Welcome {owner_names}, you have been assigned a new Subscriptions."
         Notification.objects.create(recipient=instance.user, message=message)
 
 
-@receiver(pre_save, sender=Subscriptions)
-def create_subscription_expiry_notification(sender, instance, **kwargs):
+@receiver(m2m_changed, sender=Subscriptions.owners.through)
+def owners_changed(sender, instance, action, **kwargs):
+    if action == "post_add":
+        owner_names = ', '.join([f"{o.first_name} {o.last_name}" for o in instance.owners.all()])
+        message = f"Subscriptions '{instance.sub_type}' owners updated: {owner_names}."
+        Notification.objects.create(recipient=instance.user, message=message)
+
+
+@receiver(post_save, sender=Subscriptions)
+def create_Subscriptions_expiry_notification(sender, instance, **kwargs):
+    
     if instance.expiring_date and instance.expiring_date <= date.today() + timedelta(days=7):
-        message = f"The {instance.sub_type} subscription for {instance.owner_first_name} {instance.owner_last_name} is expiring soon on {instance.expiring_date}."
+        owner_names = ', '.join([f"{o.first_name} {o.last_name}" for o in instance.owners.all()])
+        message = f"The {instance.sub_type} Subscriptions for {owner_names} is expiring soon on {instance.expiring_date}."
         Notification.objects.create(recipient=instance.user, message=message)

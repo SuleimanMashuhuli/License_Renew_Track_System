@@ -457,6 +457,79 @@ export default function Admins () {
           text-align: center;
         }
 
+          @media (max-width: 1024px) {
+            .modal {
+              width: 70%;
+            }
+
+            .add-btn {
+              padding: 8px 16px;
+              font-size: 14px;
+            }
+          }
+
+          @media (max-width: 768px) {
+            .modal {
+              width: 90%;
+            }
+
+            .table-container {
+              overflow-x: auto;
+            }
+
+            table {
+              width: 700px; /* make it scrollable on small screens */
+            }
+
+            .add-btn-container {
+              justify-content: center;
+            }
+
+            .modal input {
+              font-size: 14px;
+            }
+
+            .modal-actions {
+              flex-direction: column;
+              gap: 10px;
+            }
+
+            .modal-actions button {
+              width: 100%;
+            }
+
+            .icon-buttons {
+              flex-direction: column;
+              gap: 6px;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .add-btn {
+              font-size: 12px;
+              padding: 6px 12px;
+            }
+
+            .modal h2 {
+              font-size: 16px;
+            }
+
+            .modal input {
+              font-size: 12px;
+            }
+
+            .modal {
+              padding: 1rem;
+            }
+
+            th,
+            td {
+              padding: 6px 10px;
+              font-size: 12px;
+            }
+          }
+
+
       `}</style>
     </div>
  

@@ -1,0 +1,41 @@
+[2025-05-26 09:51:33,890] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 09:51:48,762] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseRenew/settings.py changed, reloading.
+[2025-05-26 09:51:49,481] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 09:51:54,800] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseRenew/settings.py changed, reloading.
+[2025-05-26 09:51:55,395] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 09:51:58,689] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseRenew/settings.py changed, reloading.
+[2025-05-26 09:51:59,306] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 09:52:21,187] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 09:52:21,796] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 09:52:34,358] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 09:52:34,955] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 09:52:53,648] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 09:52:54,182] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:01:37,391] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:01:38,289] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:01:48,949] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:01:49,508] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:01:51,709] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:01:52,237] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:01:56,508] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:01:57,097] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:02:01,395] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:02:01,951] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:02:09,449] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:02:10,003] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:02:15,257] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:02:15,822] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:02:22,208] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:02:22,805] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:02:26,064] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:02:26,617] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:02:30,831] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/views.py changed, reloading.
+[2025-05-26 10:02:31,379] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:02:57,173] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/urls.py changed, reloading.
+[2025-05-26 10:02:57,740] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:03:03,042] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/urls.py changed, reloading.
+[2025-05-26 10:03:03,592] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:03:07,852] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/urls.py changed, reloading.
+[2025-05-26 10:03:08,410] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-26 10:03:17,839] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/urls.py changed, reloading.
+[2025-05-26 10:03:18,361] INFO django.utils.autoreload - Watching for file changes with StatReloader

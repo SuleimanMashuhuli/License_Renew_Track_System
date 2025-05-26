@@ -218,6 +218,52 @@ export default function RenewalsPage() {
           color: #777;
           text-align: center;
         }
+
+        @media (max-width: 768px) {
+          .renewals-page {
+            padding: 16px;
+          }
+
+          .renewals-table th,
+          .renewals-table td {
+            font-size: 12px;
+            padding: 6px;
+          }
+
+          .renew-btn,
+          .proceed-btn,
+          .decline-btn {
+            font-size: 12px;
+            padding: 6px 10px;
+          }
+
+          .modal {
+            width: 95%;
+            padding: 16px;
+          }
+
+          .modal-actions {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .modal-actions button {
+            width: 100%;
+          }
+
+          table {
+            font-size: 12px;
+          }
+
+          th, td {
+            padding: 6px 10px;
+          }
+
+          caption {
+            font-size: 12px;
+          }
+        }
+
       `}</style>
     </div>
   );

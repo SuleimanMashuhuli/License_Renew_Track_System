@@ -17,7 +17,7 @@ import Admins from "./pages/Admins.jsx"
 import Logs from "./pages/Logs.jsx"
 import GetHelp from "./components/GetHelp.jsx"
 import Settings from "./pages/Settings.jsx";
-import OTPPage from "./pages/OTPPage.jsx";
+// import OTPPage from "./pages/OTPPage.jsx";
 import SetPassword from "./components/Setpassword.jsx";
 
 
@@ -30,7 +30,7 @@ function App() {
             <Route path="/" element={<Navigate to="/sign_in" replace />} />
 
             <Route path="/sign_in" element={<SignIn />} />
-            <Route path="/otp"   element={<OTPPage />} />
+            {/* <Route path="/otp"   element={<OTPPage />} /> */}
             <Route path="/set-password" element={<SetPassword />} />
             <Route path="/sign_up" element={<SignUp />} />
             <Route path="/logout" element={<SignOut />} />

@@ -38,6 +38,24 @@ export default function Layout() {
                 overflow: auto;
                 background-color: #fff;
                 }
+
+                 @media (max-width: 768px) {
+                .admin-layout {
+                flex-direction: column;
+                }
+
+                .admin-layout > :first-child {
+                display: none; /* Hide Sidebar */
+                }
+
+                .main-content {
+                width: 100%;
+                }
+
+                .page-content {
+                padding: 1rem;
+                }
+            }
             `}
         </style>
     </div>

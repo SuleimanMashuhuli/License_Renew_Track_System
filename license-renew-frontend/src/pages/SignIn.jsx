@@ -326,6 +326,7 @@ const Login = () => {
   font-family: "IBM Plex Mono", monospace;
   font-weight: 400;
   font-style: normal;
+  flex: 1;
 }
 
 .signin-right {
@@ -536,6 +537,9 @@ const Login = () => {
     width: 100%;
     padding: 30px;
   }
+  .description {
+    font-size: 32px;
+  }
 
   .signin-left {
     align-items: center;
@@ -563,7 +567,69 @@ const Login = () => {
   .login-link {
     font-size: 13px;
   }
-}[]
+}
+
+@media (max-width: 768px) {
+  .signin-box {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .signin-left,
+  .signin-right {
+    width: 100%;
+    padding: 30px;
+  }
+
+  .signin-left {
+    align-items: center;
+    text-align: center;
+  }
+
+  .scatter-logo {
+    width: 60px;
+  }
+
+  .description {
+    font-size: 32px;
+  }
+
+  .form-title {
+    font-size: 20px;
+  }
+
+  .signin-form {
+    width: 90%;
+  }
+
+  .signin-form input {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .submit-btn,
+  .verify-btn,
+  .resend-btn {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .otp-slot {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+  }
+
+  .otp-hyphen {
+    font-size: 20px;
+  }
+
+  .button-row {
+    flex-direction: column;
+  }
+}
+
   `}
 </style>
 

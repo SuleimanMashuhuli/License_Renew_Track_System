@@ -12,6 +12,24 @@ export default function DashboardHome() {
 
 
   useEffect(() => {
+    
+    window.history.pushState(null, '', window.location.href);
+  
+    const onPopState = (e) => {
+    
+      window.history.pushState(null, '', window.location.href);
+    };
+  
+    window.addEventListener('popstate', onPopState);
+  
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
+  
+
+
+  useEffect(() => {
     fetchDashboardStats();
   }, []);
   
@@ -97,6 +115,7 @@ export default function DashboardHome() {
               <TableHead className="w-[180px]">Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Issuing Authority</TableHead>
+              <TableHead>Issued Date</TableHead>
               <TableHead>Expiry Date</TableHead>
               <TableHead className="text-right">Status</TableHead>
             </TableRow>
@@ -107,8 +126,23 @@ export default function DashboardHome() {
                 <TableCell>{sub.sub_name}</TableCell>
                 <TableCell>{sub.sub_type}</TableCell>
                 <TableCell>{sub.issuing_authority}</TableCell>
+                <TableCell>{new Date(sub.issuing_date).toLocaleDateString()}</TableCell>
                 <TableCell>{new Date(sub.expiring_date).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">{sub.status}</TableCell>
+                <TableCell>
+                  {(() => {
+                    const today = new Date();
+                    const expiry = new Date(sub.expiring_date);
+                    const daysDiff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+
+                    if (daysDiff < 0) {
+                      return <span className="badge badge-expired">Expired</span>;
+                    } else if (daysDiff <= 7) {
+                      return <span className="badge badge-due-soon">Due Soon</span>;
+                    } else {
+                      return <span className="badge badge-active">Active</span>;
+                    }
+                  })()}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -157,10 +191,10 @@ export default function DashboardHome() {
 
         .table-container {
           width: 100%;
-          border: 1px solid #a3a3a3;
+          // border: 1px solid #a3a3a3;
            border-right: 1px solid #a3a3a3;
           border-left: 1px solid #a3a3a3;
-          border-top: 1px solid #a3a3a3;
+          // border-top: 1px solid #a3a3a3;
          
           overflow: hidden;
           overflow-x: auto;
@@ -176,8 +210,8 @@ export default function DashboardHome() {
 
         th,
         td {
-          padding: 12px 15px;
-          border: 0px solid #e0e0e0;
+          padding: 8px 15px;
+          border-bottom: 1px solid #a3a3a3;
         }
 
         th {
@@ -200,6 +234,31 @@ export default function DashboardHome() {
         tbody tr:hover {
           background-color: #f1f1f1;
         }
+
+        .badge {
+            display: inline-block;
+            padding: 1px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+            text-align: left;
+          }
+
+          .badge-active {
+            background-color: #d4edda;
+            color: #155724;
+          }
+
+          .badge-due-soon {
+            background-color: #fff3cd;
+            color: #856404;
+          }
+
+          .badge-expired {
+            background-color: #f8d7da;
+            color: #721c24;
+          }
+
 
         caption {
           margin-top: 2rem;

@@ -28,9 +28,24 @@ export default function UserManagement() {
   const ownerSubscriptionsMap = useMemo(() => {
     const map = {};
     subscriptions.forEach((sub) => {
-      const email = sub.owner_email.toLowerCase();
-      if (!map[email]) map[email] = [];
-      map[email].push(sub);
+      if (sub.owners && Array.isArray(sub.owners)) {
+        
+        sub.owners.forEach((owner) => {
+          const email = owner.email.toLowerCase();
+          if (!map[email]) map[email] = [];
+          map[email].push({ ...sub, owner });
+        });
+      } else if (sub.owner_email) {
+        
+        const email = sub.owner_email.toLowerCase();
+        if (!map[email]) map[email] = [];
+        map[email].push({ ...sub, owner: {
+          email: sub.owner_email,
+          first_name: sub.owner_first_name,
+          last_name: sub.owner_last_name,
+          department: sub.owner_department,
+        }});
+      }
     });
     return map;
   }, [subscriptions]);
@@ -38,8 +53,22 @@ export default function UserManagement() {
   const uniqueOwners = useMemo(() => {
     const ownerMap = new Map();
     subscriptions.forEach((sub) => {
-      if (!ownerMap.has(sub.owner_email)) {
-        ownerMap.set(sub.owner_email, sub);
+      if (sub.owners && Array.isArray(sub.owners)) {
+        sub.owners.forEach((owner) => {
+          if (!ownerMap.has(owner.email)) {
+            ownerMap.set(owner.email, owner);
+          }
+        });
+      } else if (sub.owner_email) {
+        const email = sub.owner_email;
+        if (!ownerMap.has(email)) {
+          ownerMap.set(email, {
+            email: sub.owner_email,
+            first_name: sub.owner_first_name,
+            last_name: sub.owner_last_name,
+            department: sub.owner_department,
+          });
+        }
       }
     });
     return Array.from(ownerMap.values());
@@ -74,23 +103,23 @@ export default function UserManagement() {
             <TableBody>
               {uniqueOwners.map((owner) => (
                 <TableRow
-                  key={owner.owner_email}
+                  key={owner.email}
                   className={`transition duration-150 ${
-                    selectedOwnerEmail === owner.owner_email ? "bg-blue-100" : ""
+                    selectedOwnerEmail === owner.email ? "bg-blue-100" : ""
                   }`}
                 >
                   <TableCell>
                     <span
-                      onClick={() => handleOwnerClick(owner.owner_email)}
+                      onClick={() => handleOwnerClick(owner.email)}
                       className="text-blue-600 hover:underline cursor-pointer"
                     >
-                      {owner.owner_first_name} {owner.owner_last_name}
+                      {owner.first_name} {owner.last_name}
                     </span>
                   </TableCell>
-                  <TableCell>{owner.owner_email}</TableCell>
-                  <TableCell>{owner.owner_department}</TableCell>
+                  <TableCell>{owner.email}</TableCell>
+                  <TableCell>{owner.department}</TableCell>
                   <TableCell>
-                      {ownerSubscriptionsMap[owner.owner_email.toLowerCase()]?.length || 0}
+                      {ownerSubscriptionsMap[owner.email.toLowerCase()]?.length || 0}
                     </TableCell>
                 </TableRow>
               ))}
@@ -286,6 +315,82 @@ export default function UserManagement() {
         .cursor-pointer {
           cursor: pointer;
         }
+
+
+        @media (max-width: 1024px) {
+          .tables-container {
+            flex-direction: column;
+          }
+
+          .employees-table,
+          .employees-table-right {
+            width: 100%;
+            border-left: none;
+            border-right: none;
+            border-top: 1px solid #a3a3a3;
+            border-bottom: 1px solid #a3a3a3;
+          }
+
+          .add-btn-container {
+            justify-content: center;
+          }
+        }
+
+        @media (max-width: 768px) {
+          th, td {
+            font-size: 12px;
+            padding: 6px 10px;
+          }
+
+          .add-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+          }
+
+          .modal {
+            width: 90%;
+            padding: 1rem;
+          }
+
+          .modal h2 {
+            font-size: 18px;
+          }
+
+          .modal input {
+            font-size: 14px;
+          }
+
+          .modal-actions button {
+            font-size: 14px;
+            padding: 0.5rem 0.75rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          th, td {
+            font-size: 11px;
+            padding: 4px 8px;
+          }
+
+          .add-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+          }
+
+          .modal h2 {
+            font-size: 16px;
+          }
+
+          .modal-actions {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .modal-actions button {
+            width: 100%;
+          }
+        }
+
 
       `}</style>
     </div>

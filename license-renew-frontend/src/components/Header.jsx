@@ -119,7 +119,7 @@ export default function Header() {
     useEffect(() => {
       const fetchUnreadNotifications = async () => {
         try {
-          const response = await axios.get("http://127.0.0.1:8000/notifications/unread/", {
+          const response = await axios.get("http://127.0.0.1:8000/api/notifications/unread/", {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -211,7 +211,7 @@ export default function Header() {
                 </a>
               </li>
               <li>
-                <a href="#" className="menu-item">
+                <a href="/layout/settings" className="menu-item">
                   <i class="fa-solid fa-gear"></i> &nbsp;   <span className="label">Settings</span>
                 </a>
               </li>
@@ -233,10 +233,10 @@ export default function Header() {
 
       {isNotificationModalOpen && (
         <div
-          className="modal-over"
+          className="modal-overhead"
           onClick={() => setIsNotificationModalOpen(false)}
         >
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-noti" onClick={(e) => e.stopPropagation()}>
             <h4>Notifications</h4>
             <ul className="notification-list">
               {unreadNotifications.length === 0 ? (
@@ -244,9 +244,13 @@ export default function Header() {
               ) : (
                 unreadNotifications.map((notification) => (
                   <li key={notification.id} className="notification-item">
-                    <strong>{notification.title}</strong>
                     <p>{notification.message}</p>
-                    <small>{new Date(notification.timestamp).toLocaleString()}</small>
+                    <small>{new Date(notification.created_at).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                      </small>
                   </li>
                 ))
               )}
@@ -288,45 +292,6 @@ export default function Header() {
 
           }
 
-          .notification-button {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0;
-            height: 40px;
-            width: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-            .notification-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-          }
-
-          .notification-list li {
-            margin-bottom: 1rem;
-            padding: 0.5rem;
-            border-bottom: 1px solid #ddd;
-          }
-            .notification-badge {
-              position: absolute;
-              top: 0;
-              right: 0;
-              width: 10px;
-              height: 10px;
-              background-color: red;
-              border-radius: 50%;
-            }
-
-            .profile-box .user-details .user-name {
-            font-weight: 400;
-            font-size: 0.8rem;
-            margin-right: 10px;
-          }
-
           .profile-box {
             display: flex;
             align-items: center;
@@ -338,6 +303,11 @@ export default function Header() {
             gap: 0.6rem;
             transition: box-shadow 0.2s ease;
             height: 40px;
+          }
+             .profile-box .user-details .user-name {
+            font-weight: 400;
+            font-size: 0.8rem;
+            margin-right: 10px;
           }
 
           .avatar-circle {
@@ -370,7 +340,7 @@ export default function Header() {
           .modal-overhead {
             position: fixed;
             top: 72px;
-            right: 1.5rem;
+            right: 0px;
             bottom: 0;
             left: 0;
             background: rgba(0, 0, 0, 0.1);
@@ -479,28 +449,83 @@ export default function Header() {
             color: #b02a37;
           }
 
-            .modal-over {
-            position: fixed;
-            top: 72px;
-            right: 1.5rem;
-            width: 100%;
-            bottom: 0;
-            left: 0;
-            background: rgba(0, 0, 0, 0.1);
+            .modal-noti {
+              position: absolute;
+              top: px; 
+              right: 16px;
+              background: white;
+              border-radius: 12px;
+              min-width: 280px;
+              max-width: 250px;
+              max-height: 300px;
+              padding: 1.5rem;
+              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+              z-index: 1010;
+              overflow-y: auto;
+            }
+              .modal-noti h4 {
+              margin: 0 0 1rem 0;
+              font-size: 1rem;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 0.5rem;
+               color: #444;
+            }
+            .notification-list {
+              list-style: none;
+              padding: 0;
+              margin: 0;
+            }
+
+            .notification-item {
+              margin-bottom: 1rem;
+              padding-bottom: 0.5rem;
+              border-bottom: 1px solid #ddd;
+              
+            }
+
+            .notification-item p {
+              margin: 0.2rem 0;
+              font-size: 0.8rem;
+              color: #444;
+              text-align: justified;
+            }
+
+            .notification-item small {
+              font-size: 0.75rem;
+              color: #888;
+            }
+          .notification-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            height: 40px;
+            width: 40px;
             display: flex;
-            justify-content: flex-end;
-            padding: 1rem;
-            z-index: 1010;
+            align-items: center;
+            justify-content: center;
+          }
+            .notification-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
           }
 
-          .modal-body {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 320px;
-            max-height: 80vh;
-            overflow-y: auto;
+          .notification-list li {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-bottom: 1px solid #ddd;
           }
+            .notification-badge {
+              position: absolute;
+              top: 0;
+              right: 0;
+              width: 10px;
+              height: 10px;
+              background-color: red;
+              border-radius: 50%;
+            }
 
         `}
       </style>

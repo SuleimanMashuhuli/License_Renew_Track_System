@@ -9,7 +9,7 @@ const ActionMenu = ({ sub, index, openModal, handleDelete }) => {
   return (
     <div className="icon-buttons">
       <button
-        onClick={() => openModal(sub, index)}
+        onClick={() => openModal(index)}
         className="icon-button edit"
         title="Edit"
       >
@@ -46,6 +46,7 @@ const ActionMenu = ({ sub, index, openModal, handleDelete }) => {
 
         .icon-button.delete {
           color: #d9534f;
+        }
 
         .mini-modal {
           margin-left: 20px;
@@ -81,17 +82,28 @@ const ActionMenu = ({ sub, index, openModal, handleDelete }) => {
         .mini-modal button:last-child {
           color: red;
         }
+
+
+         @media screen and (max-width: 600px) {
+          .icon-buttons {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+          }
+
+          .icon-button {
+            font-size: 12px;
+            padding: 3px;
+          }
+        }
       `}</style>
     </div>
   );
 };
 
 
-
-
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     sub_name: '',
     sub_type: '',
@@ -100,94 +112,124 @@ export default function Subscriptions() {
     expiring_date: '',
     amount: '',
     reference: '',
-    owner_first_name: '',
-    owner_last_name: '',
-    owner_email: '',
-    owner_department: '',
+    owners: [{ first_name: '', last_name: '', email: '', department: '' }],
     associated_documents: null,
   });
   const [editIndex, setEditIndex] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
+  const fetchSubscriptions = async () => {
+    const token = sessionStorage.getItem('token');
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/subscriptions/', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSubscriptions(response.data);
+    } catch (err) {
+      console.error('Error fetching subscriptions:', err);
+    }
+  };
 
   useEffect(() => {
-    const fetchSubscriptions = async () => {
-      try {
-        const token = sessionStorage.getItem('token');
-        const response = await axios.get('http://127.0.0.1:8000/api/subscriptions/', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        console.log('Fetched subscriptions:', response.data);
-        setSubscriptions(response.data);
-      } catch (error) {
-        console.error('Error fetching subscriptions:', error);
-      }
-    };
     fetchSubscriptions();
   }, []);
-  
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
+  const openModal = (index = null) => {
+    if (index !== null) {
+      const sub = subscriptions[index];
 
-  const handleFileChange = (e) => {
-    setFormData({
-      ...formData,
-      associated_documents: e.target.files[0],
-    });
-  };
+      if (!sub) {
+        console.warn(`Subscription at index ${index} is undefined`);
+        return; 
+      }
 
+      const formatDate = (date) =>
+        date ? new Date(date).toISOString().split('T')[0] : '';
 
-  const openModal = (sub = null, index = null) => {
-    if (sub) {
-      setFormData(sub);
       setEditIndex(index);
-    } else {
       setFormData({
-        sub_name: '',
-        sub_type: '',
-        issuing_authority: '',
-        issuing_date: '',
-        expiring_date: '',
-        amount: '',
-        reference: '',
-        owner_first_name: '',
-        owner_last_name: '',
-        owner_email: '',
-        owner_department: '',
+        sub_name: sub.sub_name || '',
+        sub_type: sub.sub_type || '',
+        issuing_authority: sub.issuing_authority || '',
+        issuing_date: formatDate(sub.issuing_date),
+        expiring_date: formatDate(sub.expiring_date),
+        amount: sub.amount || '',
+        reference: sub.reference || '',
+        owners: sub.owners?.length
+          ? sub.owners.map((o) => ({
+              first_name: o.first_name || '',
+              last_name: o.last_name || '',
+              email: o.email || '',
+              department: o.department || '',
+            }))
+          : [{ first_name: '', last_name: '', email: '', department: '' }],
         associated_documents: null,
       });
-      setEditIndex(null);
+    } else {
+      resetForm();
     }
     setShowModal(true);
   };
 
+  const resetForm = () => {
+    setFormData({
+      sub_name: '',
+      sub_type: '',
+      issuing_authority: '',
+      issuing_date: '',
+      expiring_date: '',
+      amount: '',
+      reference: '',
+      owners: [{ first_name: '', last_name: '', email: '', department: '' }],
+      associated_documents: null,
+    });
+    setEditIndex(null);
+    setShowModal(false);
+    setError('');
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formDataToSend = new FormData();
-
+    setLoading(true);
+    setError('');
+  
+    const token = sessionStorage.getItem('token');
+    console.log("Token:", token);
+    if (!token) {
+      setError('No token found. Please log in again.');
+      setLoading(false);
+      return;
+    }
+  
+    const payload = new FormData();
+  
     for (const key in formData) {
-      if (formData[key]) {
-        formDataToSend.append(key, formData[key]);
+      if (key === 'associated_documents' && formData[key] instanceof File) {
+        payload.append(key, formData[key]);
+      } else if (key === 'owners')  {
+        payload.append('owners', JSON.stringify(formData[key])); 
+      } else {
+        payload.append(key, formData[key]);
       }
     }
-
+  
+    console.log("FormData payload:");
+    for (let pair of payload.entries()) {
+      console.log(pair[0] + ':', pair[1]);
+    }
+  
     try {
-
-      const token = sessionStorage.getItem('token');
-
+      let response;
       if (editIndex !== null) {
-        const updatedSubscriptions = [...subscriptions];
-        updatedSubscriptions[editIndex] = formData;
-        setSubscriptions(updatedSubscriptions);
-
-        await axios.put(`http://127.0.0.1:8000/api/subscriptions/update/${subscriptions[editIndex].id}/`, formDataToSend,
+        const subId = subscriptions[editIndex].id;
+        console.log("Updating subscription with ID:", subId);
+  
+        response = await axios.put(
+          `http://127.0.0.1:8000/api/subscriptions/update/${subId}/`,
+          payload,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -195,76 +237,98 @@ export default function Subscriptions() {
             },
           }
         );
+        const updated = [...subscriptions];
+        updated[editIndex] = response.data;
+        setSubscriptions(updated);
+        console.log("Subscription updated successfully:", response.data);
       } else {
-      
-        const response = await axios.post('http://127.0.0.1:8000/api/subscriptions/create/', formDataToSend, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        console.log("Creating new subscription...");
+        response = await axios.post(
+          'http://127.0.0.1:8000/api/subscriptions/',
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
         setSubscriptions([...subscriptions, response.data]);
+        console.log("Subscription created successfully:", response.data);
       }
-      setShowModal(false);
-      setFormData({
-        sub_name: '',
-        sub_type: '',
-        issuing_authority: '',
-        issuing_date: '',
-        expiring_date: '',
-        amount: '',
-        reference: '',
-        owner_first_name: '',
-        owner_last_name: '',
-        owner_email: '',
-        owner_department: '',
-        associated_documents: null,
-      });
-      setEditIndex(null);
-    } catch (error) {
-      console.error('Error submitting form:', error);
+  
+      resetForm();
+    } catch (err) {
+      console.error('Error submitting form:', err);
+      console.log("Full error response:", err.response?.data || err.message);
+      setError('Submission failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
-
   
-  const handleDelete = async (index) => {
-    try {
-      const token = sessionStorage.getItem('token');
 
-      await axios.delete(`http://127.0.0.1:8000/api/subscriptions/delete/${subscriptions[index].id}/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-    });
+  const handleDelete = async (index) => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this subscription?');
+    if (!confirmDelete) return;
+
+    const token = sessionStorage.getItem('token');
+    try {
+      await axios.delete(
+        `http://127.0.0.1:8000/api/subscriptions/delete/${subscriptions[index].id}/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const updated = [...subscriptions];
       updated.splice(index, 1);
       setSubscriptions(updated);
-    } catch (error) {
-      console.error('Error deleting subscription:', error);
+    } catch (err) {
+      console.error('Error deleting subscription:', err);
     }
   };
 
-  const getStatusText = (expiringDate) => {
-    if (!expiringDate) return 'Unknown';
-    const now = new Date();
-    const expiry = new Date(expiringDate);
-    const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-  
-    if (diffDays < 0) return 'Expired';
-    if (diffDays <= 7) return 'Due Soon';
-    return 'Active';
+   const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setFormData({ ...formData, associated_documents: file });
   };
-  
-  const getStatusClass = (expiringDate) => {
-    if (!expiringDate) return 'status-unknown';
-    const now = new Date();
-    const expiry = new Date(expiringDate);
-    const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-  
-    if (diffDays < 0) return 'status-expired';
-    if (diffDays <= 7) return 'status-due-soon';
-    return 'status-active';
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'associated_documents') {
+      setFormData({ ...formData, [name]: files[0] });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleOwnerChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedOwners = [...formData.owners];
+    updatedOwners[index][name] = value;
+    setFormData({ ...formData, owners: updatedOwners });
+  };
+
+  const addOwner = () => {
+    setFormData({
+      ...formData,
+      owners: [...formData.owners, { first_name: '', last_name: '', email: '', department: '' }],
+    });
+  };
+
+  const removeOwner = (index) => {
+    const updatedOwners = [...formData.owners];
+    updatedOwners.splice(index, 1);
+    setFormData({ ...formData, owners: updatedOwners });
+  };
+
+  const renderOwnersList = (owners) => {
+    if (!owners || !Array.isArray(owners) || owners.length === 0) return 'N/A';
+    return owners.map((o, i) => (
+      <div key={i}>
+        {o.first_name} {o.last_name} 
+      </div>
+    ));
   };
   
 
@@ -280,7 +344,6 @@ export default function Subscriptions() {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal">
-            <h2>{editIndex !== null ? 'Edit' : 'Add'} Subscription</h2>
             <form onSubmit={handleSubmit}>
               <input
                 name="sub_name"
@@ -288,6 +351,7 @@ export default function Subscriptions() {
                 value={formData.sub_name}
                 onChange={handleChange}
                 required
+                style={{ marginTop: '0px' }}
               />
               <input
                 name="sub_type"
@@ -305,8 +369,8 @@ export default function Subscriptions() {
               />
               <input
                 type="date"
-                name="issuing_date"
                 value={formData.issuing_date}
+                name="issuing_date"
                 onChange={handleChange}
                 required
               />
@@ -332,41 +396,64 @@ export default function Subscriptions() {
                 onChange={handleChange}
                 required
               />
-              <input
-                name="owner_first_name"
-                placeholder="Owner's First Name"
-                value={formData.owner_first_name}
-                onChange={handleChange}
-                required
-              />
-              <input
-                name="owner_last_name"
-                placeholder="Owner's Last Name"
-                value={formData.owner_last_name}
-                onChange={handleChange}
-                required
-              />
-              <input
-                name="owner_email"
-                type="email"
-                placeholder="Owner's Email"
-                value={formData.owner_email}
-                onChange={handleChange}
-                required
-              />
-              <input
-                name="owner_department"
-                placeholder="Owner's Department"
-                value={formData.owner_department}
-                onChange={handleChange}
-                required
-              />
+
+              <hr style={{ marginBottom: '20px' }} />
+
+              {formData.owners.map((owner, idx) => (
+                <div key={idx} style={{ marginBottom: '0px', paddingBottom: '10px' }}>
+                  <input
+                    name="first_name"
+                    placeholder="First Name"
+                    value={owner.first_name}
+                    onChange={(e) => handleOwnerChange(idx, e)}
+                    required
+                  />
+                  <input
+                    name="last_name"
+                    placeholder="Last Name"
+                    value={owner.last_name}
+                    onChange={(e) => handleOwnerChange(idx, e)}
+                    required
+                  />
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder="Email"
+                    value={owner.email}
+                    onChange={(e) => handleOwnerChange(idx, e)}
+                    required
+                  />
+                  <input
+                    name="department"
+                    placeholder="Department"
+                    value={owner.department}
+                    onChange={(e) => handleOwnerChange(idx, e)}
+                    required
+                  />
+                  {formData.owners.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeOwner(idx)}
+                      style={{ marginTop: '5px', color: 'red', cursor: 'pointer' }}
+                      className='remove-owner-btn'
+                    >
+                      Remove Owner
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              <button type="button" onClick={addOwner} style={{ marginBottom: '15px' }} className='add-owner-btn'>
+                + Add Owner
+              </button>
+
               <input
                 type="file"
                 name="associated_documents"
                 onChange={handleFileChange}
                 accept="application/pdf,image/*" 
               />
+
               <div className="modal-actions">
                 <button type="submit">{editIndex !== null ? 'Update' : 'Save'}</button>
                 <button type="button" onClick={() => setShowModal(false)}>
@@ -389,7 +476,7 @@ export default function Subscriptions() {
               <TableHead>Expiry Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Reference</TableHead>
-              <TableHead>Assigned To</TableHead>
+              <TableHead>Owners</TableHead>
               <TableHead>Action</TableHead> 
             </TableRow>
           </TableHeader>
@@ -417,7 +504,7 @@ export default function Subscriptions() {
                   })()}
                 </TableCell>
                 <TableCell>{sub.reference}</TableCell>
-                <TableCell>{sub.user ? `${sub.user.first_name} ${sub.user.last_name}` : "N/A"}</TableCell>
+                <TableCell>{renderOwnersList(sub.owners)}</TableCell>
                 <TableCell>
                   <ActionMenu sub={sub} index={index} openModal={openModal} handleDelete={handleDelete} />
                 </TableCell>
@@ -502,30 +589,43 @@ export default function Subscriptions() {
           display: flex;
           justify-content: center;
           align-items: center;
-          z-index: 1000;
         }
 
-        .modal {
+        .modal { 
+          overflow-y: auto;
+          z-index: 1000;
           background: white;
           padding: 2rem;
           border-radius: 8px;
-          width: 50%;
+          max-height: 80vh;
+          overflow-y: auto;
           max-width: 600px;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
 
-        .modal h2 {
-          margin-bottom: 1rem;
-        }
-
         .modal input {
           width: 100%;
-          padding: 8px;
+          padding: 6px;
           margin-bottom: 1rem;
           border: 1px solid #ccc;
           border-radius: 4px;
         }
+        .remove-owner-btn {
+          margin-top: 5px;
+          color: red;
+          border-radius: 4px;
+          border: 1px solid #ccc;
+          background: #93c5fd;
+          padding: 6px 10px;
+        }
 
+        .add-owner-btn {
+          margin-bottom: 15px;
+          background-color: ##dbeafe;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          padding: 4px 10px;
+        }
         .modal-actions {
           display: flex;
           justify-content: space-between;
@@ -619,6 +719,51 @@ export default function Subscriptions() {
           font-size: 14px;
           color: #777;
           text-align: center;
+        }
+
+
+
+        @media (max-width: 768px) {
+          .modal {
+            width: 95%;
+            padding: 15px;
+          }
+
+          .add-btn-container {
+            justify-content: center;
+          }
+
+          .modal input,
+          .modal button {
+            width: 100%;
+            margin-bottom: 10px;
+          }
+
+          .table-container {
+            overflow-x: auto;
+          }
+
+          table {
+            width: 1000px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .modal {
+            padding: 10px;
+          }
+
+          .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .remove-owner-btn,
+          .add-owner-btn {
+            width: 100%;
+            margin-top: 10px;
+          }
         }
 
       `}</style>

@@ -310,6 +310,68 @@ const ViewProfile = () => {
         font-size:13px;
         color:var(--subtext);
     }
+
+     @media (max-width: 768px) {
+    .wrapper {
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .profile-sidebar {
+      width: 100%;
+      order: 2;
+    }
+
+    .content {
+      order: 1;
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+    }
+
+    .name {
+      font-size: 16px;
+      text-align: center;
+    }
+
+    td:first-child {
+      width: 120px;
+    }
+
+    table {
+      font-size: 12px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .avatar {
+      width: 80px;
+      height: 80px;
+    }
+
+    .panel {
+      font-size: 12px;
+      padding: 12px 0 15px;
+    }
+
+    h2 {
+      font-size: 18px;
+    }
+
+    .name {
+      font-size: 14px;
+    }
+
+    td {
+      padding: 6px 8px;
+    }
+
+    td:first-child {
+      width: 100px;
+    }
+  }
   
       `}</style>
     </div>

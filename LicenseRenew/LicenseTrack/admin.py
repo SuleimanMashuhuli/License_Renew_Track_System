@@ -51,14 +51,11 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Subscriptions)
 class SubscriptionsAdmin(admin.ModelAdmin):
-    list_display = (
-        'sub_name', 'sub_type', 'owner_first_name', 'owner_last_name',
-        'owner_email', 'owner_department', 'issuing_date',
-        'expiring_date', 'amount', 'user', 'is_document_uploaded',
-        'status_display'
-    )
-    list_filter = ('sub_type', 'owner_email', 'expiring_date', 'owner_department', 'issuing_authority')
-    search_fields = ('sub_name', 'owner_email', 'owner_first_name', 'owner_last_name')
+    list_display = ('sub_name', 'sub_type', 'issuing_authority', 'issuing_date', 'expiring_date', 'amount', 'user', 'status_display')
+    list_filter = ('sub_type', 'owners__email', 'expiring_date', 'owners__department', 'issuing_authority')
+    filter_horizontal = ('owners',) 
+    search_fields = ('sub_name', 'owners__email', 'owners__first_name', 'owners__last_name')
+
 
     def status_display(self, obj):
         return obj.status()

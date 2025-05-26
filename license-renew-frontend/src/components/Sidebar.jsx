@@ -191,6 +191,26 @@ export default function Sidebar() {
           .dropdown:hover .arrow-icon {
             transform: rotate(90deg);
           }
+
+          
+            @media (max-width: 768px) {
+            .sidebar {
+              display: none;
+              position: absolute;
+              z-index: 1000;
+              width: 100%;
+              height: 100%;
+              background-color: hsl(220 13% 91%);
+              overflow-y: auto;
+              padding: 1rem;
+            }
+
+            .sidebar.open {
+              display: flex;
+              flex-direction: column;
+            }
+          }
+
         `}
       </style>
     </div>

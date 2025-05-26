@@ -1,7 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 
-/** Button Component */
+
 export function Button({ children, className = "", variant = "default", ...props }) {
   const variants = {
     default: "bg-blue-500 hover:bg-blue-600 text-white",
@@ -19,7 +19,7 @@ export function Button({ children, className = "", variant = "default", ...props
   );
 }
 
-/** Select Component */
+
 export function Select({ options = [], className = "", ...props }) {
   return (
     <select className={`px-3 py-2 border rounded-md ${className}`} {...props}>
@@ -32,7 +32,7 @@ export function Select({ options = [], className = "", ...props }) {
   );
 }
 
-/** Table Component */
+
 export function Table({ headers = [], data = [], className = "" }) {
   return (
     <div className="overflow-x-auto">
@@ -62,7 +62,7 @@ export function Table({ headers = [], data = [], className = "" }) {
   );
 }
 
-// --CARD-- //
+
 export const Card = ({ children, className = "", ...props }) => {
   return (
     <div

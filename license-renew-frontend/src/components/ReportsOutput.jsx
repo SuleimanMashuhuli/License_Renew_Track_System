@@ -157,7 +157,7 @@ const ReportsOutput = () => {
           text-align: center;
         }
         .metric-item h2 {
-          font-size: 1rem;
+          font-size: 1rem;  
           font-weight: normal;
         }
         .metric-item p {
