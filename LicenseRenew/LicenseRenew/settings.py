@@ -2,6 +2,9 @@ import environ
 import os
 from datetime import timedelta
 from pathlib import Path
+from kombu import Connection
+
+
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,9 +33,11 @@ INSTALLED_APPS = [
     'corsheaders',
     'channels',
     'django_filters',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -40,7 +45,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
  ] 
 
@@ -88,7 +92,7 @@ DATABASES = {
         'NAME': 'SubscriptionDB',
         'USER': 'AdminS',
         'PASSWORD': '2025',
-        'HOST': '127.0.0.1',
+        'HOST': 'postgres',
         'PORT': '5432',
     }
 }
@@ -190,6 +194,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULTS_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
 
 # Initialize environment variables
 env = environ.Env()

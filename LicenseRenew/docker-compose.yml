@@ -1,50 +1,78 @@
-version: '3.8'
-
 services:
-  # broker:
-  #   image: rabbitmq:4.1.0-management
-  #   container_name: rabbitmqv1
-  #   ports:
-  #     - "5673:5672"
-  #     - "15673:15672"
-  #   volumes:
-  #     - rabbitmq_data:/var/lib/rabbitmq
-  #   restart: always
-
   web:
     build: .
-    command:  python3 manage.py runserver 0.0.0.0:8000 #gunicorn LicenseRenew.wsgi:application --bind 0.0.0.0:8000
-    network_mode: host
-    # ports:
-    #   - "8000:8000"
+    command: python3 manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
     env_file:
       - .env
-    # depends_on:
-      # - broker
+    depends_on:
+      - postgres
+      - broker
+      - memcached
+      - redis   
     restart: always
 
   worker:
     build: .
     command: celery -A LicenseRenew worker --loglevel=info
-    network_mode: host
     env_file:
       - .env
     depends_on:
-      # - broker
+      - postgres
+      - broker
       - web
-     
+      - memcached
+      - redis    
     restart: always
 
   beat:
     build: .
     command: celery -A LicenseRenew beat --loglevel=info
-    network_mode: host
     env_file:
       - .env
     depends_on:
-      # - broker
+      - postgres
+      - broker
       - web
+      - memcached
+      - redis    
     restart: always
 
-# volumes:
-#   rabbitmq_data:
+  broker:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-broker
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+
+  memcached:
+    image: memcached:alpine
+    ports:
+      - "11211:11211"
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: SubscriptionDB
+      POSTGRES_USER: AdminS
+      POSTGRES_PASSWORD: 2025
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  rabbitmq_data:
+  postgres_data:

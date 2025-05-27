@@ -1,38 +1,42 @@
-FROM python:3.10
+FROM python:3.10-slim-buster
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
 
-# RUN apt-get update \
-#     && apt-get install -y --no-install-recommends \ 
-#     build-essential \
-#     libpq-dev \ 
-#     && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list && \
+    apt-get update -o Acquire::Check-Valid-Until=false && \
+    apt-get install -y --no-install-recommends \
+        apt-transport-https \
+        ca-certificates \
+        libpq-dev gcc \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libgdk-pixbuf2.0-0 \
+        libffi-dev \
+        libcairo2 \
+        libglib2.0-0 \
+        fonts-liberation \
+        fonts-dejavu-core && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -r celerygroup && useradd -r -g celerygroup celeryuser
+
 
 WORKDIR /project
 
-COPY requirements.txt .
 
+COPY requirements.txt ./
 
-RUN pip3 install --upgrade pip && \
-    pip3 install -r requirements.txt 
-
-    # pip install reportlab==3.6.8
-
-# RUN set -eux; \
-#     while IFS= read -r pkg; do \
-#       if [ -z "$pkg" ] || echo "$pkg" | grep -qE '^\s*#'; then \
-#         continue; \
-#       fi; \
-#     pip3 install --no-cache-dir 
-    #"$pkg" || echo "Skipping $pkg"; \
-    # done < requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+    
 
 COPY . . 
 
+RUN chown -R celeryuser:celerygroup /project
 
+USER celeryuser
 
 EXPOSE 8000
 
-#CMD [ "gunicorn", "LicenseRenew.wsgi:application", "0.0.0.0:8000" ]
 CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]

@@ -17,7 +17,6 @@ import Admins from "./pages/Admins.jsx"
 import Logs from "./pages/Logs.jsx"
 import GetHelp from "./components/GetHelp.jsx"
 import Settings from "./pages/Settings.jsx";
-// import OTPPage from "./pages/OTPPage.jsx";
 import SetPassword from "./components/Setpassword.jsx";
 
 
@@ -28,9 +27,7 @@ function App() {
             {/* ---------VERSION 2------------- */}
             {/* Public Routes */}
             <Route path="/" element={<Navigate to="/sign_in" replace />} />
-
             <Route path="/sign_in" element={<SignIn />} />
-            {/* <Route path="/otp"   element={<OTPPage />} /> */}
             <Route path="/set-password" element={<SetPassword />} />
             <Route path="/sign_up" element={<SignUp />} />
             <Route path="/logout" element={<SignOut />} />
@@ -41,11 +38,6 @@ function App() {
            
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-             
-                <Route path="/view-details/:id" element={<ViewDetails />} />
-                <Route path="/reports" element={<Reports />} />
-              
-
                 <Route path="/layout" element={<Layout />}>
                     <Route index element={<DashboardHome />} />
                     <Route path="dashboard" element={<DashboardHome />} />
@@ -60,6 +52,10 @@ function App() {
                     <Route path="settings" element={<Settings />} />
                 </Route>
             </Route>
+
+            <Route path="/view-details/:id" element={<ViewDetails />} />
+            <Route path="/reports" element={<Reports />} />
+              
         </Routes>
     );
 }
