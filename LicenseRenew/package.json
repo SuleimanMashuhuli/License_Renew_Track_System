@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@shadcn/ui": "^0.0.4",
-    "lucide-react": "^0.483.0",
+    "lucide-react": "^0.511.0",
     "react-fast-marquee": "^1.6.5",
     "react-idle-timer": "^5.7.2"
   }
