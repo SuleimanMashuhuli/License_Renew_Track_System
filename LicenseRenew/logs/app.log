@@ -40,3 +40,4 @@
 [2025-05-26 10:03:17,839] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseTrack/urls.py changed, reloading.
 [2025-05-26 10:03:18,361] INFO django.utils.autoreload - Watching for file changes with StatReloader
 [2025-05-27 11:32:46,737] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-28 05:47:34,687] INFO django.utils.autoreload - Watching for file changes with StatReloader

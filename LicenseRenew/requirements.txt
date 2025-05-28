@@ -20,10 +20,10 @@ Pillow==11.2.1
 psycopg2-binary==2.9.9
 PyMuPDF==1.24.3
 pymemcache
-PyJWT==2.10.1
+PyJWT==2.9.0
 pytesseract==0.3.13
 python_dateutil==2.9.0.post0
 python-Levenshtein
 redis>=4.0.0
-reportlab==4.1.1
+reportlab==3.6.13
 weasyprint==65.1
