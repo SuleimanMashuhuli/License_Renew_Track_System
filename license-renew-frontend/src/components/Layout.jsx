@@ -36,7 +36,7 @@ export default function Layout() {
                 flex: 1;
                 padding: 2rem;
                 overflow: auto;
-                background-color: #fff;
+                background-color: #f4f4f4;
                 }
 
                  @media (max-width: 768px) {

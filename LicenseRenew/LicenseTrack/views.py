@@ -665,6 +665,8 @@ class ResendOTPView(APIView):
 
 
 class SignUpView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         try:
 

@@ -41,3 +41,27 @@
 [2025-05-26 10:03:18,361] INFO django.utils.autoreload - Watching for file changes with StatReloader
 [2025-05-27 11:32:46,737] INFO django.utils.autoreload - Watching for file changes with StatReloader
 [2025-05-28 05:47:34,687] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-30 06:00:57,201] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-30 06:04:35,840] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-30 06:09:24,451] INFO django.utils.autoreload - /home/Sali/Documents/License_Renew_Track_System/LicenseRenew/LicenseRenew/settings.py changed, reloading.
+[2025-05-30 06:09:25,493] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-30 06:38:19,007] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-30 06:38:26,752] WARNING django.request - Forbidden: /api/user/sign_up/
+[2025-05-30 06:38:26,752] WARNING django.server - "POST /api/user/sign_up/ HTTP/1.1" 403 61
+[2025-05-30 06:39:30,165] WARNING django.request - Forbidden: /api/user/sign_up/
+[2025-05-30 06:39:30,165] WARNING django.server - "POST /api/user/sign_up/ HTTP/1.1" 403 61
+[2025-05-30 06:46:19,215] INFO django.server - "POST /api/user/sign_in/ HTTP/1.1" 200 302
+[2025-05-30 06:47:29,999] INFO django.server - "OPTIONS /api/user/verify_otp/ HTTP/1.1" 200 0
+[2025-05-30 06:47:30,018] INFO django.server - "POST /api/user/verify_otp/ HTTP/1.1" 200 620
+[2025-05-30 06:47:30,103] INFO django.server - "OPTIONS /api/me/ HTTP/1.1" 200 0
+[2025-05-30 06:47:30,108] INFO django.server - "OPTIONS /api/notifications/unread/ HTTP/1.1" 200 0
+[2025-05-30 06:47:30,111] INFO django.server - "OPTIONS /api/subscriptions/ HTTP/1.1" 200 0
+[2025-05-30 06:47:30,111] INFO django.server - "OPTIONS /api/notifications/unread/ HTTP/1.1" 200 0
+[2025-05-30 06:47:30,123] INFO django.server - "GET /api/me/ HTTP/1.1" 200 261
+[2025-05-30 06:47:30,137] INFO django.server - "GET /api/notifications/unread/ HTTP/1.1" 200 2250
+[2025-05-30 06:47:30,139] INFO django.server - "GET /api/me/ HTTP/1.1" 200 261
+[2025-05-30 06:47:30,140] INFO django.server - "GET /api/subscriptions/ HTTP/1.1" 200 449
+[2025-05-30 06:47:30,198] INFO django.server - "GET /api/notifications/unread/ HTTP/1.1" 200 2250
+[2025-05-30 06:47:30,198] INFO django.server - "GET /api/subscriptions/ HTTP/1.1" 200 449
+[2025-05-30 13:36:47,252] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-05-30 13:37:33,780] INFO django.utils.autoreload - Watching for file changes with StatReloader
