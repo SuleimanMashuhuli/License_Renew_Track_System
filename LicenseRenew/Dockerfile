@@ -33,10 +33,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . . 
 
-RUN chown -R celeryuser:celerygroup /project
+USER root
+# RUN python manage.py collectstatic --noinput
+
+RUN mkdir -p /project/media && chown -R celeryuser:celerygroup /project
 
 USER celeryuser
 
 EXPOSE 8000
 
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && gunicorn LicenseRenew.wsgi:application --bind 0.0.0.0:8000 --workers 3"]

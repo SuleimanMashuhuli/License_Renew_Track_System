@@ -6,13 +6,17 @@ from kombu import Connection
 
 
 
+# Initialize environment variables
+env = environ.Env()
+environ.Env.read_env()  
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-bmk4s9kpln=7olllq9qsgxz%7p(5(7$*+5vo3^5a4wu##ya2sp'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -58,6 +62,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'renewabc.com', 'www.renewabc.com'])
+
+
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = False
 
@@ -87,17 +94,23 @@ ASGI_APPLICATION = 'LicenseRenew.asgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'SubscriptionDB'),
-        'USER': os.getenv('DB_USER', 'AdminS'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '2025'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'NAME': env('DB_NAME', default='SubscriptionDB'),
+        'USER': env('DB_USER', default='AdminS'),
+        'PASSWORD': env('DB_PASSWORD', default='2025'),
+        'HOST': env('DB_HOST', default='postgres'),
+        'PORT': env('DB_PORT', default='5432'),
     }
 }
+
+
+print("Connecting to DB_NAME:", env("DB_NAME"))
+print("Connecting to DB_USER:", env("DB_USER"))
+print("Connecting to DB_PASSWORD:", env("DB_PASSWORD"))
+print("Connecting to DB_HOST:", env("DB_HOST"))
+print("Connecting to DB_PORT:", env("DB_PORT"))
 
 
 # Password validation
@@ -134,6 +147,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -191,7 +205,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = 'login'
 
 ##CELERY SETUP
-CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+CELERY_BROKER_URL = 'amqp://guest:guest@broker:5672//'
 CELERY_RESULT_BACKEND = None
 # 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
@@ -199,10 +213,15 @@ CELERY_RESULTS_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
-
-# Initialize environment variables
-env = environ.Env()
-environ.Env.read_env()  
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            # "hosts": [('127.0.0.1', 587)],
+            "hosts": [('redis', 6379)],
+        },
+    },
+}
 
 # Email settings using environment variables
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -212,16 +231,8 @@ EMAIL_HOST_USER = 'alisuleimann4@gmail.com'
 EMAIL_HOST_PASSWORD = 'ozgxgfguntjsyauj' 
 DEFAULT_FROM_EMAIL = 'alisuleimann4@gmail.com'
 EMAIL_USE_TLS = True
-EMAIL_USE_SSL: False
+EMAIL_USE_SSL = False
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 587)],
-        },
-    },
-}
 
 CACHES = {
     "default": {
@@ -229,7 +240,6 @@ CACHES = {
         "LOCATION": "127.0.0.1:11211",
     }
 }
-
 
 
 # logs 

@@ -94,3 +94,6 @@
 [2025-06-05 12:57:42,401] INFO django.utils.autoreload - Watching for file changes with StatReloader
 [2025-06-05 13:04:50,648] INFO django.utils.autoreload - Watching for file changes with StatReloader
 [2025-06-05 14:37:01,173] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-06-09 05:54:30,499] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-06-09 06:05:18,721] INFO django.utils.autoreload - Watching for file changes with StatReloader
+[2025-06-09 06:20:37,933] INFO django.utils.autoreload - /home/mtumishi/License_Renew_Track_System/LicenseRenew/LicenseRenew/settings.py changed, reloading.
