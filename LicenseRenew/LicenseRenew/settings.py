@@ -6,12 +6,13 @@ from kombu import Connection
 
 
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 # Initialize environment variables
 env = environ.Env()
-environ.Env.read_env()  
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-bmk4s9kpln=7olllq9qsgxz%7p(5(7$*+5vo3^5a4wu##ya2sp'
 
@@ -60,9 +61,12 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://102.68.21.5:3000",
 ]
+    
+CORS_ALLOW_CREDENTIALS = True
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'renewabc.com', 'www.renewabc.com'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 
 CSRF_COOKIE_SAMESITE = 'None'
