@@ -28,7 +28,6 @@ djangorestframework_simplejwt==5.5.0
 drf-writable-nested==0.7.2
 fonttools==4.58.1
 fuzzywuzzy==0.18.0
-gunicorn
 kiwisolver==1.4.8
 kombu==5.5.4
 Levenshtein==0.27.1
